@@ -1,0 +1,139 @@
+@using TeachPlanner.BlazorClient.Common.Enums
+@using TeachPlanner.BlazorClient.Components.Shared
+@using TeachPlanner.BlazorClient.Models.Resources
+@using TeachPlanner.BlazorClient.Models.Subjects
+@using TeachPlanner.BlazorClient.State
+@using TeachPlanner.Shared.Contracts.Curriculum
+@using TeachPlanner.Shared.Contracts.Resources
+@using TeachPlanner.Shared.Domain.Common.Enums
+@using TeachPlanner.Shared.Domain.Curriculum
+
+@inject IHttpClientFactory Http
+@inject ApplicationState AppState
+
+<MudDialog>
+    <DialogContent>
+        <div class="w-96 h-96 flex flex-col">
+            @if (Error)
+            {
+                <p class="text-center pb-2">An error occurred loading content descriptions.</p>
+                <p class="text-center">Please refresh the page and try again.</p>
+            }
+            else if (Loading)
+            {
+                <div class="flex h-full items-center justify-center">
+                    <MudProgressCircular Indeterminate=true />
+                </div>
+            }
+            else
+            {
+                <select class="text-center rounded border border-darkGreenBorder font-bold p-1 bg-inherit" @bind="SelectedYearLevel">
+                    @foreach (var yearLevel in YearLevels)
+                    {
+                        <option value="@yearLevel">@yearLevel.ToDisplayString()</option>
+                    }
+                </select>
+                <MudCheckBox @bind-Value="FilterPlannedContentDescriptions" Label="Remove planned content descriptions" Class="mx-auto" />
+                <ItemsList TItem="ContentDescriptionModel"
+                           Items="ContentDescriptions[SelectedYearLevel]"
+                           SelectedItems="SelectedContentDescriptions[SelectedYearLevel]"
+                           Rounded=false>
+                    @for (int i = 0; i < ContentDescriptions[SelectedYearLevel].Count; i++)
+                    {
+                        var idx = i;
+                        if (FilterPlannedContentDescriptions && ContentDescriptions[SelectedYearLevel][idx].AlreadyPlannedFor)
+                        {
+                            continue;
+                        }
+                        var contentDescription = ContentDescriptions[SelectedYearLevel][idx];
+                        <ListItem Item="ContentDescriptions[SelectedYearLevel][idx]">
+                            <p class="text-left px-1">
+                                @foreach (var currCode in contentDescription.CurriculumCodes)
+                                {
+                                    <span class="pr-2 text-sage">@currCode</span>
+                                }
+                                @contentDescription.Text
+                            </p>
+                        </ListItem>
+                    }
+                </ItemsList>
+            }
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <Button Variant="ButtonTypes.Cancel" OnClick="Cancel">Close</Button>
+        <Button Variant="ButtonTypes.Submit" OnClick="Submit">Save</Button>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    public MudDialogInstance MudDialog { get; set; } = null!;
+
+    [Parameter]
+    public Dictionary<YearLevelValue, List<ContentDescriptionModel>> ContentDescriptions { get; set; } = [];
+
+    [Parameter]
+    public Dictionary<YearLevelValue, List<ContentDescriptionModel>> SelectedContentDescriptions { get; set; } = [];
+
+    [Parameter]
+    public List<YearLevelValue> YearLevels { get; set; } = [];
+
+    [Parameter]
+    public SubjectId SubjectId { get; set; } = default!;
+
+    private bool Loading { get; set; }
+    private bool Error { get; set; }
+    private YearLevelValue SelectedYearLevel { get; set; }
+    private bool FilterPlannedContentDescriptions { get; set; }
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok((true, ContentDescriptions, SelectedContentDescriptions)));
+    private void Cancel() => MudDialog.Close(DialogResult.Ok((false, ContentDescriptions, SelectedContentDescriptions)));
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (ContentDescriptions.Count == 0)
+        {
+            try
+            {
+                Loading = true;
+                var contentDescriptions = await Http.CreateClient("ServerApi").GetFromJsonAsync<Dictionary<YearLevelValue, List<ContentDescriptionDto>>>(
+                    $"/api/{AppState.Teacher.Id.Value}/curriculum/content-descriptions/?subjectId={SubjectId.Value}&{YearLevels.ToQueryString()}");
+
+                if (contentDescriptions is null)
+                {
+                    Error = true;
+                    return;
+                }
+                ContentDescriptions = contentDescriptions.ConvertFromDtos();
+                SelectedYearLevel = contentDescriptions.Keys.First();
+
+                foreach (var key in ContentDescriptions.Keys)
+                {
+                    SelectedContentDescriptions.Add(key, new List<ContentDescriptionModel>());
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+            }
+            finally
+            {
+                Loading = false;
+            }
+        }
+
+        if (SelectedContentDescriptions.Count == 0)
+        {
+            InitialiseSelectedContentDescriptions();
+        }
+    }
+
+    private void InitialiseSelectedContentDescriptions()
+    {
+        foreach (var key in ContentDescriptions.Keys)
+        {
+            SelectedContentDescriptions.Add(key, new List<ContentDescriptionModel>());
+        }
+    }
+}

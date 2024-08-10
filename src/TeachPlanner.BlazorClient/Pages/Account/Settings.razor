@@ -1,0 +1,30 @@
+@page "/settings"
+@attribute [Authorize]
+@using TeachPlanner.BlazorClient.Common.Enums
+@using TeachPlanner.BlazorClient.Components
+@using TeachPlanner.BlazorClient.Components.Shared
+@using TeachPlanner.BlazorClient.Services
+
+@inject IDialogService DialogService
+@inject IAuthenticationService AuthService
+@inject NavigationManager NavManager
+
+<h3>Settings</h3>
+
+<Button Variant="ButtonTypes.Cancel" OnClick="DeleteAccount">
+    Delete Account
+</Button>
+
+@code {
+    private async Task DeleteAccount()
+    {
+        var result = await DialogService.ShowMessageBox("Are you sure you want to delete your account?", "Delete Account",
+        "Yes", "Cancel");
+
+        if (result == true)
+        {
+            await AuthService.DeleteAccount();
+            NavManager.NavigateTo("/", true, true);
+        }
+    }
+}

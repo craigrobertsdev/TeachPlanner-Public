@@ -1,0 +1,38 @@
+@using TeachPlanner.BlazorClient.Common.Enums
+<CascadingValue Value="this">
+    <div class="flex @(Centered ? "w-full justify-center" : "") @(Gap ? "gap-2" : "") pb-2">
+        @foreach (var tab in Tabs) {
+            <Button Variant="GetButtonClass(tab)" @onclick="() => ActivatePage(tab)">
+                @tab.Title
+            </Button>
+        }
+    </div>
+
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = default!;
+
+    [Parameter]
+    public bool Centered { get; set; }
+
+    [Parameter]
+    public bool Gap { get; set; }
+    
+    private List<TabPage> Tabs { get; set; } = [];
+    public TabPage? ActiveTab { get; set; }
+
+    internal void AddPage(TabPage tabPage) {
+        Tabs.Add(tabPage);
+        if (Tabs.Count == 1) {
+            ActiveTab = tabPage;
+        }
+        StateHasChanged();
+    }
+
+    private ButtonTypes GetButtonClass(TabPage tab) => tab == ActiveTab ? ButtonTypes.TabActive : ButtonTypes.Tab;
+
+    private void ActivatePage(TabPage tab) => ActiveTab= tab;
+}

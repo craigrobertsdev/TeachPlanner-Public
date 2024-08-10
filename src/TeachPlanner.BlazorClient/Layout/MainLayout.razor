@@ -1,0 +1,36 @@
+@inherits LayoutComponentBase
+@inject NavigationManager NavManager
+
+<MudThemeProvider Theme="currentTheme" />
+<MudDialogProvider CloseButton="true" CloseOnEscapeKey="true" DisableBackdropClick="true" />
+<MudSnackbarProvider />
+
+<MudLayout Style="position:absolute">
+    <MudAppBar id="header" Elevation="0" Color="Color.Primary" Dense="true">
+        <NavMenu />
+    </MudAppBar>
+    <MudMainContent Style="display: flex; flex-direction: column; height: 100dvh; max-height: 100dvh">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="display:flex; flex-direction:column; flex-grow: 1; padding-left: 0.5rem !important; padding-right: 0.5rem !important;">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private readonly MudTheme currentTheme = new() {
+        Palette = new PaletteLight {
+            Primary = "#90AEB2",
+            Secondary = "#37514D",
+            Info = "#DD8E75",
+            Success = "#37514D",
+            Warning = "#DD8E75",
+            Error = "#B6594C",
+            TextPrimary = "#000000",
+        },
+        Typography = new Typography {
+            Default = new Default { 
+                FontFamily = new[] { "Nunito Sans", "sans-serif", "monospace" }
+            }, 
+        }
+    };
+}

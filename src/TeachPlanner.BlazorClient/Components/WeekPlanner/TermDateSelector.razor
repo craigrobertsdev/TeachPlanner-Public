@@ -1,0 +1,44 @@
+@using TeachPlanner.Shared.Domain.PlannerTemplates
+
+<div class="flex flex-col gap-6 max-w-4xl">
+    <div class="w-48">
+        <MudSelect T="int" Value="CurrentTerm" Label="Term" ValueChanged="HandleCurrentTermChange">
+            @for (int i = 0; i < TermDates.Count; i++) {
+                int val = i;
+                <MudSelectItem T="int" value=@(val + 1)>@(val + 1)</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+    <div class="w-48">
+        <MudSelect T="int" Value="WeekNumber" Label="Week number">
+            @foreach (var week in Enumerable.Range(1, TermDates[CurrentTerm - 1].GetNumberOfWeeks())) {
+                <MudSelectItem T="int" value=@week Class="text-center">@week</MudSelectItem>
+            }
+        </MudSelect>
+    </div>
+    <div class="max-w-48">
+        <MudDatePicker DisableToolbar=true @bind-Date="SelectedDate" StartMonth="GetTermStart()" MinDate="GetTermStart()" MaxDate="GetTermEnd()" DateFormat="dd/MM/yyyy" Label="Select a date" />
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public List<TermDate> TermDates { get; set; } = new();
+
+    [Parameter]
+    public DateTime? SelectedDate { get; set; }
+
+    [Parameter]
+    public int WeekNumber { get; set; }
+
+    [Parameter]
+    public int CurrentTerm { get; set; }
+
+    public void HandleCurrentTermChange(int term) {
+        CurrentTerm = term;
+        WeekNumber = 1;
+    }
+
+    private DateTime GetTermStart() => TermDates[CurrentTerm - 1].StartDate.ToDateTime(new TimeOnly(0, 0, 0));
+    private DateTime GetTermEnd() => TermDates[CurrentTerm - 1].EndDate.ToDateTime(new TimeOnly(0, 0, 0));
+}

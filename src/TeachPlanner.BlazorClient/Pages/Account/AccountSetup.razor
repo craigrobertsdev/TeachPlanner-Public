@@ -1,0 +1,117 @@
+@page "/account-setup"
+@using TeachPlanner.BlazorClient.Common.Enums
+@using TeachPlanner.BlazorClient.Components.Shared
+@using TeachPlanner.BlazorClient.State
+@attribute [Authorize]
+
+@inject ApplicationState AppState
+@inject IHttpClientFactory Http
+@inject NavigationManager NavManager
+@inject ILocalStorageService LocalStorage
+
+<div class="w-full py-2 px-4 text-center">
+    @if (CurrentStep == AccountSetupStep.AddingSubjects)
+    {
+        <h1 class="text-3xl">Welcome @AppState.Teacher.FirstName!</h1>
+        <h2 class="text-2xl pb-2">To get you started, we need to set up a few things</h2>
+        // Calendar year selection
+        <div class="w-full p-2 pb-4 border-b border-darkGreenBorder">
+            <h3 class="text-xl">What year are you setting your planner up for?</h3>
+            <div class="m-auto w-32">
+                <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.None" Class="text-center text-lg font-semibold border border-darkGreenBorder rounded-md bg-main" Value="SelectedCalendarYear">
+                    <MudSelectItem T="int" value=@CalendarYears[0]>@CalendarYears[0]</MudSelectItem>
+                    <MudSelectItem T="int" value=@CalendarYears[1]>@CalendarYears[1]</MudSelectItem>
+                </MudSelect>
+            </div>
+        </div>
+        <br />
+
+        // Number of days of the week worked
+        <div class="flex justify-center gap-6 w-full pb-4 border-b border-darkGreenBorder">
+            <div class="w-1/3">
+                <h3 class="text-xl pb-2">What days of the week do you work?</h3>
+                <ItemsList TItem="DayOfWeek" SelectedItems="WorkDays">
+                    @for (int i = 0; i < WeekDays.Count; i++)
+                    {
+                        var idx = i;
+                        <ListItem Item="WeekDays[idx]" Style="@(idx == WeekDays.Count - 1 ? "border-bottom: 0;" : "")">
+                            <p class="text-lg">@WeekDays[idx]</p>
+                        </ListItem>
+                    }
+                </ItemsList>
+            </div>
+            <div class="w-1/3">
+                <h3 class="text-xl pb-2">What year levels do you teach?</h3>
+                <div class="max-w-xl m-auto">
+                    @if (YearLevels.Count == 0)
+                    {
+                        <LoadingSpinner />
+                    }
+                    else
+                    {
+                        <ItemsGrid Items="YearLevels" SelectedItems="SelectedYearLevels" />
+                    }
+                </div>
+            </div>
+        </div>
+        <br />
+
+        // Subjects and year levels selection
+        <div class="w-full pb-4 border-b border-darkGreenBorder">
+            <div class="flex max-w-6xl m-auto gap-6 justify-around">
+                <div class="w-1/2">
+                    <h3 class="text-xl pb-2">What subjects do you teach?</h3>
+                    <div class="max-w-xl m-auto">
+                        @if (YearLevels.Count == 0)
+                        {
+                            <LoadingSpinner />
+                        }
+                        else
+                        {
+                            <ItemsGrid Items="Subjects" SelectedItems="SelectedSubjects" />
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (CurrentStep == AccountSetupStep.CreatingDayStructure)
+    {
+        <DayStructureCreator Parent="this" />
+    }
+    else if (CurrentStep == AccountSetupStep.CreatingWeekStructure)
+    {
+        <div class="w-full flex-col items-center mb-2 p-2 pb-4">
+            <h2 class="text-2xl">Click on a block to choose the subject and number of periods the lesson will go for</h2>
+            <LessonTemplateCreator Parent=this />
+        </div>
+    }
+
+    @if (ErrorMessage != null)
+    {
+        <p class="text-lg text-red-500 pb-2">@ErrorMessage</p>
+    }
+
+    <div class="flex gap-6 justify-center">
+        @if (CurrentStep != AccountSetupStep.AddingSubjects)
+        {
+            <Button OnClick="@MoveBackAStep" Disabled="@(CurrentStep == AccountSetupStep.AddingSubjects)" Variant=ButtonTypes.Cancel ClassList="mt-2 mb-5">
+                Back
+            </Button>
+        }
+
+        @if (CurrentStep == AccountSetupStep.CreatingWeekStructure)
+        {
+            <Button OnClick="@SetupAccount" Variant="ButtonTypes.Submit" classList="mt-2 mb-5">
+                Complete Account Setup
+            </Button>
+        }
+        else
+        {
+            <Button OnClick="@MoveToNextStep" Disabled="@(CurrentStep == AccountSetupStep.CreatingWeekStructure)" Variant="ButtonTypes.Add" ClassList="mt-2 mb-5">
+                Next
+            </Button>
+        }
+    </div>
+</div>
+

@@ -1,0 +1,116 @@
+@page "/week-planner"
+@attribute [Authorize]
+@using TeachPlanner.Api.Extensions
+@using TeachPlanner.BlazorClient.Components.Shared
+@using TeachPlanner.BlazorClient.Components.WeekPlanner
+@using TeachPlanner.BlazorClient.Models.WeekPlanner
+@using TeachPlanner.BlazorClient.State
+@using TeachPlanner.Shared.Common.Exceptions
+@using TeachPlanner.Shared.Common.Extensions
+@using TeachPlanner.Shared.Contracts.Services
+@using TeachPlanner.Shared.Contracts.Teachers.AccountSetup
+@using TeachPlanner.Shared.Contracts.WeekPlanners
+@using TeachPlanner.Shared.Domain.PlannerTemplates
+@using TeachPlanner.Shared.Domain.WeekPlanners
+
+@inject IHttpClientFactory HttpFactory
+@inject ApplicationState AppState
+@inject NavigationManager NavManager
+
+@if (Periods is null)
+{
+    <LoadingSpinner />
+}
+else
+{
+    <div class="flex gap-5">
+        <div class="p-1 flex-grow">
+            <!-- Week Planner container grid -->
+            <div style="grid-auto-rows: @gridRows" class="grid grid-cols-[minmax(7rem,_0.3fr),_repeat(5,_1fr)] border-t-2 border-darkGreenBorder">
+                <div class="row-start-1 col-start-1 flex items-center justify-center border-l-2 border-r-2 border-b-2 border-darkGreenBorder text-center text-lg font-bold">Week @WeekNumber</div>
+                @for (int i = 0; i < Periods.Count; i++)
+                {
+                    if (Periods[i].Type == PeriodType.Lesson)
+                    {
+                        <div class="col-start-1 items-center flex flex-col justify-center border-l-2 border-r-2 border-b-2 border-darkGreenBorder text-center text-lg font-semibold ">
+                            <h5>Lesson @(i + 1)</h5>
+                            <p class="text-sm">@Periods[i].StartTime</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="col-start-1 items-center flex flex-col justify-center border-l-2 border-r-2 border-b-2 border-darkGreenBorder text-center text-lg font-semibold ">
+                            <p>@Periods[i].Name</p>
+                            <p class="text-sm">@Periods[i].StartTime</p>
+                        </div>
+                    }
+                }
+                <!-- Week day headers -->
+                @for (int i = 0; i < 5; i++)
+                {
+                    <div class="col-start-@(i + 2) row-start-1 border-r-2 border-b-2 border-darkGreenBorder">
+                        <p class="text-center text-lg">@WeekStart.AddDays(i).DayOfWeek</p>
+                        <p class="text-center">@WeekStart.AddDays(i).ToString("d/M")</p>
+                    </div>
+                }
+
+                <!-- DayPlan Columns -->
+                @for (int i = 0; i < 5; i++)
+                {
+                    @for (int j = 0; j < Periods.Count; j++)
+                    {
+                        var row = j + 2;
+                        var col = i + 2;
+
+                        if (DayPlanTemplate?.Periods[j].Type == PeriodType.Lesson)
+                        {
+                            @* Lesson Plan Cards *@
+                            var lessonPlan = GetLessonPlan(i, j);
+                            var date = DayPlans[i].Date;
+                            var periodNumber = j + 1;
+                            var handleClick = () => NavManager.NavigateTo($"/lesson-planner?date={date.Year}/{date.Month}/{date.Day}&periodNumber={periodNumber}&isNewLesson={lessonPlan is null}");
+                            var overlapsBreak = DayPlanTemplate.Periods.Count > j + 1 && DayPlanTemplate?.Periods[j + 1]?.Type == PeriodType.Break;
+                            <div class="row-start-@row row-span-@(overlapsBreak ? lessonPlan?.NumberOfPeriods + 1 : lessonPlan?.NumberOfPeriods) col-start-@col h-full w-full border-r-2 border-b-2 border-darkGreenBorder cursor-pointer hover:outline hover:outline-2 hover:outline-offset-[-1px] hover:shadow-inner">
+                                @if (lessonPlan is null)
+                                {
+                                    <button class="h-full w-full" @onclick=handleClick>
+                                        Test
+                                    </button>
+                                }
+                                else
+                                {
+                                    <div class="flex flex-col items-center h-full w-full bg-@(lessonPlan.Subject.Name.GetCssClassString()) hover:outline hover:outline-2 hover:outline-offset-[-1px] hover:shadow-inner"
+                                         @onclick=handleClick>
+                                        <p class="font-bold p-2">@lessonPlan.Subject.Name</p>
+                                        <p class="text-center px-2 max-h-32 overflow-hidden">@lessonPlan.PlanningNotes</p>
+                                    </div>
+
+                                    // Conditionals to handle merging cells for multi-period lessons
+                                    if (lessonPlan.NumberOfPeriods > 1)
+                                    {
+                                        j += lessonPlan.NumberOfPeriods - 1;
+                                    }
+
+                                    if (overlapsBreak)
+                                    {
+                                        j += 1;
+                                    }
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            @* Break Plan Cards *@
+                            <div class="row-start-@row col-start-@col h-full w-full border-r-2 border-b-2 border-darkGreenBorder bg-slate-300" />
+                        }
+                    }
+                }
+            </div>
+            @if (errorMessage is not null)
+            {
+                <p class="text-red-500">@errorMessage</p>
+            }
+        </div>
+        <TermDateSelector TermDates="TermDates" CurrentTerm="CurrentTerm" WeekNumber="WeekNumber" SelectedDate="SelectedDate" />
+    </div>
+}

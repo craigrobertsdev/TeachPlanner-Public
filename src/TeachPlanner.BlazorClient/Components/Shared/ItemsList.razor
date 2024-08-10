@@ -1,0 +1,41 @@
+@typeparam TItem
+
+<CascadingValue Value="this">
+    <div class="flex flex-col bg-base overflow-auto border border-darkGreenBorder @(Rounded ? "rounded-md" : "") select-none">
+        <p>
+            @ChildContent
+        </p>
+    </div>
+</CascadingValue>
+
+@code {
+    [Parameter]
+    public List<TItem> Items { get; set; } = [];
+
+    [Parameter]
+    public List<TItem> SelectedItems { get; set; } = [];
+
+    [Parameter]
+    public RenderFragment ChildContent { get; set; } = null!;
+
+    [Parameter]
+    public string Class { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Rounded { get; set; } = true;
+
+    protected override void OnInitialized() {
+        if (ChildContent is null) {
+            throw new ArgumentNullException(nameof(ChildContent));
+        }
+    }
+
+    public void HandleItemClick(TItem item) {
+        if (SelectedItems.Contains(item)) {
+            SelectedItems.Remove(item);
+        }
+        else {
+            SelectedItems.Add(item);
+        }
+    }
+}

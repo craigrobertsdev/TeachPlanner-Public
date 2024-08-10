@@ -1,0 +1,32 @@
+<svg class="icon @CssClass">
+    <use href="@($"images/{Icon}.svg")"></use>
+</svg>
+
+<style>
+    .icon {
+        position: relative;
+        top: -2px;
+        display: inline-flex;
+        flex-flow: row nowrap;
+        align-items: center;
+        justify-content: center;
+        vertical-align: middle;
+        align-self: center;
+        width: 100%;
+        height: 100%;
+        stroke-width: 0;
+        stroke: currentColor;
+        fill: currentColor;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = string.Empty;
+
+    [Parameter]
+    public string CssClass { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool Visible { get; set; } = true;
+}

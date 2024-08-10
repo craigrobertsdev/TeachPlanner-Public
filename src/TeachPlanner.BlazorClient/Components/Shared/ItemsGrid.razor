@@ -1,0 +1,50 @@
+﻿@typeparam TItem
+
+<div class="grid grid-cols-2 bg-base overflow-auto border border-darkGreenBorder @(Rounded ? "rounded-md" : "") select-none">
+    @foreach (var item in Items)
+    {
+        var idx = Items.IndexOf(item);
+        <div class="text-center text-lg p-1 border-b border-r border-darkGreenBorder hover:cursor-pointer hover:bg-baseHover @(IsSelected(item) ? "bg-baseFocus" : "")"
+             style="@(GetStyle(idx))"
+             @onclick="() => HandleItemClick(item)">
+            <p class="text-lg">@Items[idx]</p>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TItem> Items { get; set; } = [];
+    [Parameter] public List<TItem> SelectedItems { get; set; } = [];
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public bool Rounded { get; set; } = true;
+
+    public void HandleItemClick(TItem item)
+    {
+        if (SelectedItems.Contains(item))
+        {
+            SelectedItems.Remove(item);
+        }
+        else
+        {
+            SelectedItems.Add(item);
+        }
+    }
+
+    private bool IsSelected(TItem item) => SelectedItems.Contains(item);
+
+    private string GetStyle(int idx)
+    {
+        var style = string.Empty;
+        if (idx == Items.Count - 1 || (Items.Count % 2 == 0 && idx == Items.Count - 2))
+        {
+            style += "border-bottom: 0;";
+        }
+
+        if (idx % 2 != 0)
+        {
+            style += "border-right: 0;";
+        }
+
+        return style;
+    }
+}

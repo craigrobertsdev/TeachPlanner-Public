@@ -1,0 +1,135 @@
+@page "/lesson-planner"
+@using TeachPlanner.Api.Extensions
+@using TeachPlanner.BlazorClient.Common.Enums
+@using TeachPlanner.BlazorClient.Components.LessonPlannerPage
+@using TeachPlanner.BlazorClient.Components.Shared
+@using TeachPlanner.BlazorClient.State
+@using TeachPlanner.Shared.Common.Extensions
+
+@inject IHttpClientFactory Http
+@inject ApplicationState AppState
+@inject IDialogService DialogService
+@inject NavigationManager NavManager
+@inject IJSRuntime JSRuntime
+
+<section class="grid grid-cols-[2fr_1fr] grid-rows-[auto_1fr] gap-x-3 flex-grow w-full relative m-auto">
+    <div class="col-start-1 row-start-1 flex items-center gap-12 border-darkGreenBorder p-3 bg-@CurrentSubject?.Name.GetCssClassString()">
+        <p class="text-center">
+            @if (IsNewLesson && CurrentSubject is not null)
+            {
+                <label class="font-semibold">Subject: </label>
+                <select @onchange="HandleSubjectChange" class="text-center rounded border border-darkGreenBorder font-bold p-1 bg-inherit">
+                    @foreach (var subject in CurriculumSubjects)
+                    {
+                        <option class="p-2 bg-@CurrentSubject!.Name.GetCssClassString()" value=@subject.Name>
+                            @subject.Name
+                        </option>
+                    }
+                </select>
+            }
+            else
+            {
+                <span class="font-semibold text-lg pl-4">@CurrentSubject?.Name</span>
+            }
+        </p>
+        <p class="text-center font-semibold">Period Number: @(LessonPlan?.StartPeriod == 0 ? PeriodNumber : LessonPlan?.StartPeriod)</p>
+        <div>
+            <label class="font-semibold pr-4">Number of Periods: </label>
+            @if (IsNewLesson)
+            {
+                <select class="text-center rounded border border-darkGreenBorder font-bold py-1 px-2 bg-inherit" @bind="NumberOfPeriods">
+                    <option class="p-5 text-center bg-@CurrentSubject?.Name.GetCssClassString()" value=1>1</option>
+                    <option class="p-2 text-center bg-@CurrentSubject?.Name.GetCssClassString()" value=2>2</option>
+                </select>
+            }
+            else
+            {
+                <span class="px-1">@LessonPlan?.NumberOfPeriods</span>
+            }
+        </div>
+        <p class="text-center font-semibold">Date: @Date.GetCalendarDate()</p>
+    </div>
+    <div class="row-start-1 col-start-2 flex items-center justify-end gap-3">
+        <Button Variant="ButtonTypes.Submit" OnClick="HandleSave">
+            Save
+        </Button>
+        <Button Variant="ButtonTypes.Cancel" OnClick="HandleLeavePage">
+            Go Back
+        </Button>
+    </div>
+
+    @* Planning notes form *@
+    <div class="flex flex-col flex-grow pb-2">
+        <form class="flex flex-col h-full flex-grow items-center">
+            <div id="rte-container" class="w-full h-full flex flex-col flex-grow border border-darkGreenBorder overflow-auto">
+                <RichTextEditor Parent="@this" PlanningNotes="@PlanningNotesHtml" />
+            </div>
+        </form>
+    </div>
+
+    @* Resources and content descriptions container *@
+    <div id="resource-cd-container" class="flex flex-col gap-1 flex-grow items-center h-full pb-2">
+        @* Resources *@
+        <div class="flex flex-col items-center w-full flex-grow h-1/2">
+            <div class="flex w-full items-center justify-between px-2 py-[3px]">
+                <h2 class="text-lg font-semibold">Resources and Assessments</h2>
+                <Button Variant="@ButtonTypes.Add" ClassList="self-end" OnClick="OpenResourcesDialog">
+                    Add
+                </Button>
+            </div>
+            <div class="max-h-1/2 flex-grow w-full border border-darkGreenBorder p-2 flex flex-col overflow-hidden">
+                <ResourceAssessmentTabView Resources="CurrentSubject?.SelectedResources" />
+            </div>
+        </div>
+        @* Content descriptions *@
+        <div class="flex flex-col w-full flex-grow h-1/2 max-h-1/2">
+            <div class="flex w-full items-center justify-between px-2 py-1">
+                <h2 class="text-lg font-semibold">Content Descriptions</h2>
+                <Button Variant="@ButtonTypes.Add" ClassList="self-end" OnClick="OpenContentDescriptionsDialog">
+                    Add
+                </Button>
+            </div>
+            <div class="flex-grow w-full border overflow-hidden border-darkGreenBorder">
+                @if (CurrentSubject?.SelectedContentDescriptions.Count == 0)
+                {
+                    <div class="flex justify-center align-center h-full p-2">
+                        No content descriptions selected for this lesson
+                    </div>
+
+                }
+                else
+                {
+                    <ul class="overflow-auto max-h-full">
+                        @foreach (var cd in _selectedContentDescriptionListEntries)
+                        {
+                            <li class="hover:bg-sageHover group [&:not(:first-child)]:border-t border-darkGreenBorder">
+                                <div class="invisible group-hover:visible">
+                                    <CancelButton Class="pr-2" OnClick="@(cd.OnClick)" />
+                                </div>
+                                <p class="underline flex justify-between px-2 pt-2">
+                                    @for (int i = 0; i < cd.CurriculumCodes.Count; i++)
+                                    {
+                                        if (cd.CurriculumCodes.Count == 1 || i == cd.CurriculumCodes.Count - 1)
+                                        {
+                                            @(cd.CurriculumCodes[i] + ":")
+                                        }
+                                        else
+                                        {
+                                            @(cd.CurriculumCodes[i] + ", ")
+                                        }
+                                    }
+                                    <span class="no-underline">@cd.YearLevel</span>
+                                </p>
+                                <p class="px-2 pb-4">@cd.ContentDescription</p>
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+        </div>
+    </div>
+    @if (_error is not null)
+    {
+        <p class="text-lg text-center text-red-500 pb-4">@_error</p>
+    }
+</section>

@@ -1,0 +1,61 @@
+@using TeachPlanner.BlazorClient.Services
+@using TeachPlanner.BlazorClient.State
+@inject IAuthenticationService AuthService
+@inject NavigationManager NavManager
+@inject ApplicationState AppState
+
+
+<nav class="bg-sage flex flex-none items-center w-full sm:text-sm">
+    <NavLink href="/">
+        <h1 class="text-darkGreen md:text-xl lg:text-2xl pr-4 border-r-[2px] ">Teach Planner</h1>
+    </NavLink>
+    <ul class="list-none flex flex-1 text-darkGreen text-xs sm:text-sm md:text-md xl:text-xl align-center">
+        <AuthorizeView>
+            <Authorized>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/week-planner">Week Planner</NavLink>
+                </li>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/term-planner">Term Planner</NavLink>
+                </li>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/year-planner">Year Planner</NavLink>
+                </li>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/lesson-template-creator">Lesson Template Creator</NavLink>
+                </li>
+                <li class="px-4">
+                    <NavLink class="hover:underline" href="/settings">Settings</NavLink>
+                </li>
+                <li class="ml-auto pr-6">
+                    <button class="hover:underline" @onclick=Logout>Logout</button>
+                </li>
+            </Authorized>
+            <NotAuthorized>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/authentication/register">Register</NavLink>
+                </li>
+                <li class="px-4 border-r">
+                    <NavLink class="hover:underline" href="/authentication/login">Login</NavLink>
+                </li>
+            </NotAuthorized>
+        </AuthorizeView>
+    </ul>
+</nav>
+
+@code {
+    private bool collapseNavMenu = true;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+
+    private async Task Logout()
+    {
+        await AuthService.Logout();
+        NavManager.NavigateTo("/", true, true);
+    }
+}
