@@ -1,5 +1,4 @@
 @using TeachPlanner.BlazorClient.Common.Enums
-
 <MudDialog>
     <DialogContent>
         <h3 class="text-xl pb-1 mb-3 text-center border-b border-darkGreenBorder">@Title</h3>
@@ -12,15 +11,20 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    public MudDialogInstance MudDialog { get; set; } = default!;
+    [CascadingParameter] public MudDialogInstance MudDialog { get; set; } = default!;
 
-    [Parameter]
-    public string Title { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
 
-    [Parameter]
-    public string Message { get; set; } = default!;
+    [Parameter] public string Message { get; set; } = default!;
 
-    void Cancel() => MudDialog.Close(DialogResult.Cancel());
-    void Submit() => MudDialog.Close(DialogResult.Ok(true));
+    void Cancel()
+    {
+        MudDialog.Close(DialogResult.Cancel());
+    }
+
+    void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+
 }

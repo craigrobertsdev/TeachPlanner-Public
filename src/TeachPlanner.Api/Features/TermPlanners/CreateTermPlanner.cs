@@ -1,17 +1,18 @@
 using FluentValidation;
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
+using TeachPlanner.Api.Domain.TermPlanners;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Contracts.TermPlanners;
 using TeachPlanner.Shared.Contracts.TermPlanners.CreateTermPlanner;
-using TeachPlanner.Shared.Domain.Common.Enums;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.TermPlanners;
+using TeachPlanner.Shared.Enums;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.TermPlanners;
 
 public static class CreateTermPlanner
 {
-    public static async Task<IResult> Delegate(Guid teacherId, int calendarYear, CreateTermPlannerRequest request,
+    public static async Task<IResult> Endpoint(Guid teacherId, int calendarYear, CreateTermPlannerRequest request,
         ISender sender, CancellationToken cancellationToken)
     {
         var command = new Command(
@@ -27,7 +28,7 @@ public static class CreateTermPlanner
 
     public record Command(
         TeacherId TeacherId,
-        List<TermPlan> TermPlans,
+        List<TermPlannerDto> TermPlans,
         List<YearLevelValue> YearLevels,
         int CalendarYear) : IRequest<CreateTermPlannerResponse>;
 
@@ -60,12 +61,18 @@ public static class CreateTermPlanner
             var yearData =
                 await _yearDataRepository.GetByTeacherIdAndYear(request.TeacherId, request.CalendarYear,
                     cancellationToken);
-            if (yearData is null) throw new YearDataNotFoundException();
+            if (yearData is null)
+            {
+                throw new YearDataNotFoundException();
+            }
 
             var termPlanner =
                 await _termPlannerRepository.GetByYearDataIdAndYear(yearData.Id, request.CalendarYear,
                     cancellationToken);
-            if (termPlanner is not null) throw new TermPlannerAlreadyAssociatedException();
+            if (termPlanner is not null)
+            {
+                throw new TermPlannerAlreadyAssociatedException();
+            }
 
             termPlanner = TermPlanner.Create(yearData.Id, request.CalendarYear, request.YearLevels);
 

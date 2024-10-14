@@ -1,26 +1,27 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Common.Interfaces.Services;
+using TeachPlanner.Api.Domain.LessonPlans;
+using TeachPlanner.Api.Domain.Teachers;
+using TeachPlanner.Api.Domain.WeekPlanners;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Api.Interfaces.Services;
 using TeachPlanner.Shared.Contracts.LessonPlans.CreateLessonPlan;
-using TeachPlanner.Shared.Domain.Curriculum;
-using TeachPlanner.Shared.Domain.LessonPlans;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.WeekPlanners;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.LessonPlans;
 
 public static class CreateLessonPlan
 {
-    public static async Task<IResult> Delegate([FromRoute] Guid teacherId, ISender sender, CreateLessonPlanRequest request,
+    public static async Task<IResult> Endpoint([FromRoute] Guid teacherId, ISender sender,
+        CreateLessonPlanRequest request,
         CancellationToken cancellationToken)
     {
         var command = new Command(
             new TeacherId(teacherId),
             new SubjectId(request.SubjectId),
-            request.CondentDescriptionIds,
+            request.ContentDescriptionIds,
             request.PlanningNotes,
             request.PlanningNotesHtml,
             request.LessonDate,
@@ -62,15 +63,10 @@ public static class CreateLessonPlan
         IUnitOfWork unitOfWork)
         : IRequestHandler<Command>
     {
-        private readonly ITeacherRepository _teacherRepository = teacherRepository;
-        private readonly ILessonPlanRepository _lessonPlanRepository = lessonPlanRepository;
-        private readonly IWeekPlannerRepository _weekPlannerRepository = weekPlannerRepository;
-        private readonly ITermDatesService _termDatesService = termDatesService;
-        private readonly IUnitOfWork _unitOfWork = unitOfWork;
-
         public async Task Handle(Command request, CancellationToken cancellationToken)
         {
-            var teacher = await _teacherRepository.GetByIdWithResources(request.TeacherId, request.Resources, cancellationToken);
+            var teacher =
+                await teacherRepository.GetByIdWithResources(request.TeacherId, request.Resources, cancellationToken);
             if (teacher is null)
             {
                 throw new TeacherNotFoundException();
@@ -82,117 +78,105 @@ public static class CreateLessonPlan
                 throw new YearDataNotFoundException();
             }
 
-            var lessonPlans = await _lessonPlanRepository.GetByYearDataAndDate(yearDataId!, request.LessonDate, cancellationToken);
-            var overlapExists = CheckForConflictingLessonPlans(lessonPlans, request.StartPeriod, request.NumberOfPeriods);
+            var lessonPlans =
+                await lessonPlanRepository.GetByYearDataAndDate(yearDataId, request.LessonDate, cancellationToken);
+            var overlapWillExist =
+                CheckForConflictingLessonPlans(lessonPlans, request.StartPeriod, request.NumberOfPeriods);
             var lessonPlan = lessonPlans.FirstOrDefault(lp => lp.StartPeriod == request.StartPeriod);
-            var resources = await _teacherRepository.GetResourcesById(request.Resources, cancellationToken);
+            var resources = await teacherRepository.GetResourcesById(request.Resources, cancellationToken);
 
-            using var transaction = _unitOfWork.BeginTransaction();
+            await using var transaction = unitOfWork.BeginTransaction();
 
-            if (overlapExists && lessonPlan is not null)
+            if (overlapWillExist)
             {
-                var lessonPlansToDelete = GetLessonPlansForDeletion(lessonPlans, request.StartPeriod, request.NumberOfPeriods);
-                _lessonPlanRepository.DeleteLessonPlans(lessonPlansToDelete);
-
-                UpdateLessonPlan(lessonPlan, request, resources);
-                _lessonPlanRepository.UpdateLessonPlan(lessonPlan);
-            }
-            else if (!overlapExists && lessonPlan is not null)
-            {
-                // update the existing lesson plan
-                UpdateLessonPlan(lessonPlan, request, resources);
-                _lessonPlanRepository.UpdateLessonPlan(lessonPlan);
-            }
-            else if (overlapExists && lessonPlan is null)
-            {
-                var lessonPlansToDelete = GetLessonPlansForDeletion(lessonPlans, request.StartPeriod, request.NumberOfPeriods);
-                _lessonPlanRepository.DeleteLessonPlans(lessonPlansToDelete);
-                await _unitOfWork.SaveChangesAsync(cancellationToken);
-
-                lessonPlan = LessonPlan.Create(
-                    yearDataId,
-                    request.SubjectId,
-                    request.ContentDescriptionIds,
-                    request.PlanningNotes,
-                    request.PlanningNotesHtml,
-                    request.NumberOfPeriods,
-                    request.StartPeriod,
-                    request.LessonDate,
-                    resources);
-
-                _lessonPlanRepository.Add(lessonPlan);
-
-            }
-            else
-            {
-                lessonPlan = LessonPlan.Create(
-                    yearDataId,
-                    request.SubjectId,
-                    request.ContentDescriptionIds,
-                    request.PlanningNotes,
-                    request.PlanningNotesHtml,
-                    request.NumberOfPeriods,
-                    request.StartPeriod,
-                    request.LessonDate,
-                    resources);
-
-                _lessonPlanRepository.Add(lessonPlan);
+                var lessonPlansToDelete =
+                    GetLessonPlansForDeletion(lessonPlans, request.StartPeriod, request.NumberOfPeriods);
+                lessonPlanRepository.DeleteLessonPlans(lessonPlansToDelete);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
             }
 
-            // Adding a reference to the associated dayplan to satisfy database requirement
-            var termNumber = _termDatesService.GetTermNumber(request.LessonDate);
-            var weekNumber = _termDatesService.GetWeekNumber(request.LessonDate.Year, termNumber, request.LessonDate);
-            var weekPlanner = await _weekPlannerRepository.GetByYearAndWeekNumber(request.LessonDate.Year, weekNumber, cancellationToken);
+            lessonPlan = LessonPlan.Create(
+                yearDataId,
+                request.SubjectId,
+                request.ContentDescriptionIds,
+                request.PlanningNotes,
+                request.PlanningNotesHtml,
+                request.NumberOfPeriods,
+                request.StartPeriod,
+                request.LessonDate,
+                resources);
+            lessonPlanRepository.Add(lessonPlan);
+            await UpdateWeekPlannerRelationships(request.LessonDate, lessonPlan, cancellationToken);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+
+        private static bool CheckForConflictingLessonPlans(List<LessonPlan> lessonPlans, int startPeriod,
+            int numberOfPeriods)
+        {
+            foreach (var lp in lessonPlans)
+            {
+                if (StartsBeforeAndExtendsPast(lp, startPeriod, numberOfPeriods)
+                    || StartsAfterAndIsCoveredBy(lp, startPeriod, numberOfPeriods))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool StartsBeforeAndExtendsPast(LessonPlan lp, int startPeriod, int numberOfPeriods)
+        {
+            return startPeriod < lp.StartPeriod && startPeriod + numberOfPeriods > lp.StartPeriod;
+        }
+
+        private static bool StartsAfterAndIsCoveredBy(LessonPlan lp, int startPeriod, int numberOfPeriods)
+        {
+            return startPeriod > lp.StartPeriod && lp.StartPeriod + lp.NumberOfLessons > startPeriod;
+        }
+
+        private async Task UpdateWeekPlannerRelationships(DateOnly lessonDate, LessonPlan lessonPlan,
+            CancellationToken cancellationToken)
+        {
+            // Adding a reference to the associated dayPlan to satisfy database requirement
+            var termNumber = termDatesService.GetTermNumber(lessonDate);
+            var weekNumber =
+                termDatesService.GetWeekNumber(lessonDate.Year, termNumber, lessonDate);
+            var weekPlanner =
+                await weekPlannerRepository.GetByYearAndWeekNumber(lessonDate.Year, weekNumber,
+                    cancellationToken);
 
             if (weekPlanner is null)
             {
                 throw new WeekPlannerNotFoundException();
             }
 
-            var dayPlan = weekPlanner.DayPlans.FirstOrDefault(dp => dp.Date == request.LessonDate);
+            var dayPlan = weekPlanner.DayPlans.FirstOrDefault(dp => dp.Date == lessonDate);
 
             if (dayPlan is null)
             {
-                dayPlan = DayPlan.Create(request.LessonDate, weekPlanner.Id, [], []);
-                weekPlanner.AddDayPlan(dayPlan);
+                dayPlan = DayPlan.Create(lessonDate, weekPlanner.Id, [], []);
+                weekPlanner.UpdateDayPlan(dayPlan);
             }
-            dayPlan.AddLessonPlan(lessonPlan!);
 
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+            dayPlan.AddLessonPlan(lessonPlan!);
         }
 
-        private static IEnumerable<LessonPlan> GetLessonPlansForDeletion(IEnumerable<LessonPlan> lessonPlans, int startPeriod, int numberOfPeriods)
+        private static IEnumerable<LessonPlan> GetLessonPlansForDeletion(IEnumerable<LessonPlan> lessonPlans,
+            int startPeriod, int numberOfPeriods)
         {
-            return lessonPlans.Where(lp => lp.StartPeriod < startPeriod + numberOfPeriods);
+            return lessonPlans.Where(lp =>
+                lp.StartPeriod >= startPeriod && lp.StartPeriod < startPeriod + numberOfPeriods);
         }
 
         private static void UpdateLessonPlan(LessonPlan lessonPlan, Command request, List<Resource> resources)
         {
-            lessonPlan.SetNumberOfPeriods(request.NumberOfPeriods);
+            lessonPlan.SetNumberOfLessons(request.NumberOfPeriods);
             lessonPlan.SetPlanningNotes(request.PlanningNotes, request.PlanningNotesHtml);
-            lessonPlan.AddCurriculumCodes(request.ContentDescriptionIds);
+            lessonPlan.SetCurriculumCodes(request.ContentDescriptionIds);
             lessonPlan.UpdateResources(resources);
         }
     }
-
-    private static bool CheckForConflictingLessonPlans(List<LessonPlan> lessonPlans, int startPeriod, int numberOfPeriods)
-    {
-        foreach (var lp in lessonPlans)
-        {
-            if (StartsBeforeAndExtendsPast(lp, startPeriod, numberOfPeriods)
-                || StartsAfterAndIsCoveredBy(lp, startPeriod, numberOfPeriods))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool StartsBeforeAndExtendsPast(LessonPlan lp, int startPeriod, int numberOfPeriods) =>
-        (startPeriod < lp.StartPeriod && startPeriod + numberOfPeriods > lp.StartPeriod);
-
-    private static bool StartsAfterAndIsCoveredBy(LessonPlan lp, int startPeriod, int numberOfPeriods) =>
-        (startPeriod > lp.StartPeriod && lp.StartPeriod + lp.NumberOfPeriods > startPeriod);
 }

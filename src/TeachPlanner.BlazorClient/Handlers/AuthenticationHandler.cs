@@ -16,13 +16,16 @@ public class AuthenticationHandler : DelegatingHandler
         _configuration = configuration;
     }
 
-    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request,
+        CancellationToken cancellationToken)
     {
         var jwt = await _authenticationService.GetJwt();
         var isToServer = request.RequestUri?.AbsoluteUri.StartsWith(_configuration["ServerUrl"] ?? "") ?? false;
 
         if (isToServer && !string.IsNullOrEmpty(jwt))
+        {
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", jwt);
+        }
 
         var response = await base.SendAsync(request, cancellationToken);
 

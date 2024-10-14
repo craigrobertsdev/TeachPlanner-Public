@@ -1,5 +1,5 @@
 using TeachPlanner.Api;
-using TeachPlanner.Api.Extensions.DependencyInjection;
+using TeachPlanner.Api.DependencyInjection;
 using TeachPlanner.Api.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -7,16 +7,18 @@ builder.Services
     .AddInfrastructure(builder.Configuration)
     .AddApplication();
 
+const string corsPolicyName = "web_client";
+
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("wasm",
-      p =>
-      {
-          p.AllowAnyHeader();
-          p.AllowAnyMethod();
-          p.AllowAnyHeader();
-          p.AllowAnyOrigin();
-      });
+    options.AddPolicy(corsPolicyName, p =>
+    {
+        var webClient = builder.Configuration["Endpoints:WebClient"];
+        if (webClient is not null)
+        {
+            p.WithOrigins(webClient).AllowAnyHeader().AllowAnyMethod();
+        }
+    });
 });
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -39,7 +41,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 // enable cors
-app.UseCors("wasm");
+app.UseCors(corsPolicyName);
 
 app.UseAuthentication();
 app.UseAuthorization();
@@ -47,3 +49,6 @@ app.UseAuthorization();
 app.MapApi();
 
 app.Run();
+
+// For integration test visibility
+public partial class Program { }

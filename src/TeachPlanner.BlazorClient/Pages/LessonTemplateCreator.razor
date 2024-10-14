@@ -1,7 +1,6 @@
-@using TeachPlanner.Api.Extensions
-@using TeachPlanner.BlazorClient.Models.WeekPlanner
 @using TeachPlanner.BlazorClient.State
-@using TeachPlanner.Shared.Domain.PlannerTemplates
+@using TeachPlanner.Shared.Enums
+@using TeachPlanner.Shared.Extensions
 @attribute [Authorize]
 
 @inject IJSRuntime JSRuntime
@@ -28,7 +27,7 @@
 <div class="max-w-screen-xl m-auto">
     <div class="flex gap-6 pb-2">
         <div class="w-1/2">
-            <MudSelect T="string" ValueChanged="SelectSubject" Value="SelectedLesson?.SubjectName" Label="Subject" Placeholder=" " Disabled=@(SelectedLesson is null) Variant="Variant.Filled" Margin="Margin.None">
+            <MudSelect T="string" ValueChanged="SelectSubject" Value="SelectedLesson?.SubjectName" Label="Subject" Placeholder=" " Disabled="@(SelectedLesson is null)" Variant="Variant.Filled" Margin="Margin.None">
                 <MudSelectItem Value="NIT">NIT</MudSelectItem>
                 @foreach (var subject in Parent.SelectedSubjects)
                 {
@@ -37,7 +36,7 @@
             </MudSelect>
         </div>
         <div class="w-1/2">
-            <MudSelect T="int?" ValueChanged="SelectNumberOfLessons" Value="SelectedLesson?.NumberOfPeriods" Label="Number of lessons" Disabled=@(SelectedLesson is null) Variant="Variant.Filled" Margin="Margin.None">
+            <MudSelect T="int?" ValueChanged="SelectNumberOfLessons" Value="SelectedLesson?.NumberOfPeriods" Label="Number of lessons" Disabled="@(SelectedLesson is null)" Variant="Variant.Filled" Margin="Margin.None">
                 @foreach (var i in LessonSpans)
                 {
                     <MudSelectItem T="int?" Value="i">@i</MudSelectItem>
@@ -49,9 +48,9 @@
     <!-- Week Planner container grid -->
     <div style="grid-auto-rows: @_gridRows" class="grid grid-cols-[minmax(7rem,_0.3fr),_repeat(5,_1fr)] max-w-screen-xl border-t-2 border-darkGreenBorder">
         <div class="row-start-1 col-start-1 flex items-center justify-center border-l-2 border-r-2 border-b-2 border-darkGreenBorder text-center text-lg font-bold"></div>
-        @for (int i = 0; i < Parent.WeekStructure.Periods.Count; i++)
+        @for (var i = 0; i < Parent.WeekStructure.Periods.Count; i++)
         {
-            if (Parent.WeekStructure.Periods[i].Type == PeriodType.Lesson)
+            if (Parent.WeekStructure.Periods[i].PeriodType == PeriodType.Lesson)
             {
                 <div class="col-start-1 items-center flex flex-col justify-center border-l-2 border-r-2 border-b-2 border-darkGreenBorder text-center text-lg font-semibold ">
                     <h5>Lesson @CalculatePeriodNumber(i + 1)</h5>
@@ -66,7 +65,7 @@
             }
         }
         <!-- Week day headers -->
-        @for (int i = 0; i < 5; i++)
+        @for (var i = 0; i < 5; i++)
         {
             <div class="col-start-@(i + 2) row-start-1 border-r-2 border-b-2 border-darkGreenBorder">
                 <p class="text-center text-lg">@_daysOfTheWeek[i]</p>
@@ -74,19 +73,20 @@
         }
 
         <!-- DayPlan Columns -->
-        @for (int i = 0; i < 5; i++)
+        @for (var i = 0; i < 5; i++)
         {
             var idx = i;
-            
+
             @* For NWDs *@
-            if (Parent.WeekStructure!.DayTemplates[idx] == null)
+            if (Parent.WeekStructure!.DayTemplates[idx].IsNonWorkingDay)
             {
                 var numberOfPeriods = 0;
-                int row = 2; // start at 2 to account for the header row
+                var row = 2; // start at 2 to account for the header row
                 var col = i + 2;
 
-                for (int j = 0; j <= Parent.WeekStructure!.Periods.Count; j++) {
-                    if (j < Parent.WeekStructure.Periods.Count && Parent.WeekStructure.Periods[j].Type == PeriodType.Lesson)
+                for (var j = 0; j <= Parent.WeekStructure!.Periods.Count; j++)
+                {
+                    if (j < Parent.WeekStructure.Periods.Count && Parent.WeekStructure.Periods[j].PeriodType == PeriodType.Lesson)
                     {
                         numberOfPeriods++;
                     }
@@ -101,15 +101,15 @@
                         <div class="row-start-@(row + numberOfPeriods) col-start-@col h-full w-full border-r-2 border-b-2 border-darkGreenBorder">
                             <p class="h-full w-full bg-slate-300"></p>
                         </div>
-                        
+
                         row += numberOfPeriods + 1;
                         numberOfPeriods = 0;
                     }
-
                 }
             }
-            else {
-                for (int j = 0; j < Parent.WeekStructure?.Periods.Count; j++)
+            else
+            {
+                for (var j = 0; j < Parent.WeekStructure?.Periods.Count; j++)
                 {
                     var row = j + 2;
                     var col = i + 2;
@@ -117,16 +117,16 @@
                     var period = j;
 
                     @* Lesson Plan Cards *@
-                    if (Parent.WeekStructure.Periods[j].Type == PeriodType.Lesson)
+                    if (Parent.WeekStructure.Periods[j].PeriodType == PeriodType.Lesson)
                     {
                         var periodNumber = j + 1;
                         var lessonPlan = GetLessonPlan(i, periodNumber);
-                        var overlapsBreak = lessonPlan.NumberOfPeriods > 1 && Parent.WeekStructure?.Periods[j + 1].Type == PeriodType.Break;
+                        var overlapsBreak = lessonPlan.NumberOfPeriods > 1 && Parent.WeekStructure?.Periods[j + 1].PeriodType == PeriodType.Break;
                         <div class="row-start-@row row-span-@(overlapsBreak ? lessonPlan?.NumberOfPeriods + 1 : lessonPlan?.NumberOfPeriods)
                                 col-start-@col h-full w-full border-r-2 border-b-2 border-darkGreenBorder
                                 @(IsSelected(lessonPlan!) ? "bg-sage outline outline-2 outline-offset-[-1px] shadow-inner" : "")
                                 hover:outline hover:outline-2 hover:outline-offset-[-1px] hover:shadow-inner"
-                            @onclick="() => SelectLesson(lessonPlan!, day, period)">
+                             @onclick="() => SelectLesson(lessonPlan!, day, period)">
 
                             <div class="flex flex-col items-center h-full w-full bg-@(lessonPlan.SubjectName?.GetCssClassString()) hover:outline hover:outline-2 hover:outline-offset-[-1px] hover:shadow-inner cursor-default">
                                 <p class="font-bold p-2 m-auto">@lessonPlan.SubjectName</p>

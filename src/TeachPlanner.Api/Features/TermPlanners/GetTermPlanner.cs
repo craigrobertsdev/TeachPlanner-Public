@@ -1,14 +1,14 @@
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Contracts.TermPlanners.GetTermPlanner;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Contracts.TermPlanners;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.TermPlanners;
 
 public static class GetTermPlanner
 {
-    public static async Task<IResult> Delegate(Guid teacherId, int calendarYear, ISender sender,
+    public static async Task<IResult> Endpoint(Guid teacherId, int calendarYear, ISender sender,
         CancellationToken cancellationToken)
     {
         var query = new Query(new TeacherId(teacherId), calendarYear);
@@ -18,9 +18,9 @@ public static class GetTermPlanner
         return Results.Ok(result);
     }
 
-    public record Query(TeacherId TeacherId, int CalendarYear) : IRequest<GetTermPlannerResponse>;
+    public record Query(TeacherId TeacherId, int CalendarYear) : IRequest<TermPlannerDto>;
 
-    public class Handler : IRequestHandler<Query, GetTermPlannerResponse>
+    public class Handler : IRequestHandler<Query, TermPlannerDto>
     {
         private readonly ITeacherRepository _teacherRepository;
         private readonly ITermPlannerRepository _termPlannerRepository;
@@ -31,23 +31,32 @@ public static class GetTermPlanner
             _teacherRepository = teacherRepository;
         }
 
-        public async Task<GetTermPlannerResponse> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<TermPlannerDto> Handle(Query request, CancellationToken cancellationToken)
         {
             var teacher = await _teacherRepository.GetById(request.TeacherId, cancellationToken);
 
-            if (teacher is null) throw new TeacherNotFoundException();
+            if (teacher is null)
+            {
+                throw new TeacherNotFoundException();
+            }
 
             var yearDataId = teacher.GetYearData(request.CalendarYear);
 
-            if (yearDataId is null) throw new YearDataNotFoundException();
+            if (yearDataId is null)
+            {
+                throw new YearDataNotFoundException();
+            }
 
             var termPlanner =
                 await _termPlannerRepository.GetByYearDataIdAndYear(yearDataId, request.CalendarYear,
                     cancellationToken);
 
-            if (termPlanner is null) throw new TermPlannerNotFoundException();
+            if (termPlanner is null)
+            {
+                throw new TermPlannerNotFoundException();
+            }
 
-            return new GetTermPlannerResponse(termPlanner);
+            return new TermPlannerDto();
         }
     }
 }

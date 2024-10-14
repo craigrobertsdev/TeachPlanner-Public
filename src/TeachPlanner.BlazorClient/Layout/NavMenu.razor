@@ -22,13 +22,13 @@
                     <NavLink class="hover:underline" href="/year-planner">Year Planner</NavLink>
                 </li>
                 <li class="px-4 border-r">
-                    <NavLink class="hover:underline" href="/lesson-template-creator">Lesson Template Creator</NavLink>
+                <NavLink class="hover:underline" href="/lesson-template-creator">Lesson Template Creator</NavLink>
                 </li>
                 <li class="px-4">
                     <NavLink class="hover:underline" href="/settings">Settings</NavLink>
                 </li>
                 <li class="ml-auto pr-6">
-                    <button class="hover:underline" @onclick=Logout>Logout</button>
+                    <button class="hover:underline" @onclick="Logout">Logout</button>
                 </li>
             </Authorized>
             <NotAuthorized>
@@ -58,4 +58,5 @@
         await AuthService.Logout();
         NavManager.NavigateTo("/", true, true);
     }
+
 }

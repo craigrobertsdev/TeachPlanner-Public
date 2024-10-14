@@ -1,11 +1,11 @@
-using TeachPlanner.Shared.Domain.Common;
-using TeachPlanner.Shared.Domain.Common.Planner;
+using TeachPlanner.Shared.Contracts.PlannerTemplates;
+using TeachPlanner.Shared.ValueObjects;
 
 namespace TeachPlanner.Shared.Contracts.WeekPlanners;
 
 public record WeekPlannerDto(
     IEnumerable<DayPlanDto> DayPlans,
-    DayPlanTemplateDto DayPlanPattern,
+    WeekStructureDto WeekStructure,
     DateOnly WeekStart,
     int WeekNumber);
 

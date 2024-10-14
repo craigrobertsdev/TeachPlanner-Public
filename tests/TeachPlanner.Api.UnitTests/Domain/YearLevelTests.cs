@@ -1,27 +1,32 @@
 using FluentAssertions;
-using TeachPlanner.Shared.Domain.Common.Enums;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Api.Domain.Curriculum;
+using TeachPlanner.Api.Tests.Helpers.Domain;
+using TeachPlanner.Shared.Enums;
 
-namespace TeachPlanner.Api.UnitTests.Domain;
+namespace TeachPlanner.Api.Tests.Domain;
+
 public class YearLevelTests
 {
-    private readonly List<YearLevel> _yearLevelsWithYearLevelValues;
     private readonly List<YearLevel> _yearLevelsWithBandLevelValues;
+    private readonly List<YearLevel> _yearLevelsWithYearLevelValues;
+
     public YearLevelTests()
     {
-        _yearLevelsWithYearLevelValues = new() {
+        _yearLevelsWithYearLevelValues =
+        [
             YearLevel.Create(YearLevelValue.Reception, ""),
             YearLevel.Create(YearLevelValue.Year1, ""),
             YearLevel.Create(YearLevelValue.Year2, ""),
-            YearLevel.Create(YearLevelValue.Year3, ""),
-        };
+            YearLevel.Create(YearLevelValue.Year3, "")
+        ];
 
-        _yearLevelsWithBandLevelValues = new() {
+        _yearLevelsWithBandLevelValues =
+        [
             YearLevel.Create(YearLevelValue.Reception, ""),
-            YearLevel.Create(YearLevelValue.Years1to2, ""),
-            YearLevel.Create(YearLevelValue.Years3to4, ""),
-            YearLevel.Create(YearLevelValue.Years5to6, ""),
-        };
+            YearLevel.Create(YearLevelValue.Years1To2, ""),
+            YearLevel.Create(YearLevelValue.Years3To4, ""),
+            YearLevel.Create(YearLevelValue.Years5To6, "")
+        ];
     }
 
     [Fact]
@@ -48,5 +53,32 @@ public class YearLevelTests
 
         // Assert
         result.Should().BeEquivalentTo(_yearLevelsWithBandLevelValues[1]);
+    }
+
+    [Fact]
+    public void GetFromYearLevelValue_WhenYearLevelInCollection_ShouldReturnYearLevel()
+    {
+        // Arrange
+        var yearLevels = YearLevelHelpers.CreateYearLevels();
+
+        // Act
+        var yearLevel = yearLevels.GetFromYearLevelValue(YearLevelValue.Year1);
+
+        // Assert
+        yearLevel.Should().NotBeNull();
+        yearLevel!.YearLevelValue.Should().Be(YearLevelValue.Year1);
+    }
+
+    [Fact]
+    public void GetFromYearLevelValue_WhenYearLevelNotInCollection_ShouldReturnNull()
+    {
+        // Arrange
+        var yearLevels = YearLevelHelpers.CreateYearLevels();
+
+        // Act
+        var yearLevel = yearLevels.GetFromYearLevelValue(YearLevelValue.Year5);
+
+        // Assert
+        yearLevel.Should().BeNull();
     }
 }

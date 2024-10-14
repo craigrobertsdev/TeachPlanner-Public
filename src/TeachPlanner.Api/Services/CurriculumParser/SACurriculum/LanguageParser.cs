@@ -1,6 +1,6 @@
 using System.Text;
-using TeachPlanner.Shared.Domain.Common.Enums;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Api.Domain.Curriculum;
+using TeachPlanner.Shared.Enums;
 using UglyToad.PdfPig;
 
 namespace TeachPlanner.Api.Services.CurriculumParser.SACurriculum;
@@ -8,7 +8,10 @@ namespace TeachPlanner.Api.Services.CurriculumParser.SACurriculum;
 public class LanguageParser : BaseParser
 {
     private static readonly char[] _contentDescriptionEndings = ['^'];
-    public LanguageParser(string subjectName) : base(subjectName, _contentDescriptionEndings) { }
+
+    public LanguageParser(string subjectName) : base(subjectName, _contentDescriptionEndings)
+    {
+    }
 
     protected override YearLevel ParseLearningStandard(PdfDocument document, ref string description)
     {
@@ -22,7 +25,8 @@ public class LanguageParser : BaseParser
         {
             var word = words[idx];
             if (word == "Languages")
-            { // Handles the first occurrence of the subject name which is in the footer of the page
+            {
+                // Handles the first occurrence of the subject name which is in the footer of the page
                 if (found)
                 {
                     break;
@@ -43,10 +47,8 @@ public class LanguageParser : BaseParser
                 {
                     break;
                 }
-                else
-                {
-                    descriptionBuilder.Append("Learning");
-                }
+
+                descriptionBuilder.Append("Learning");
             }
 
             if (words[idx] == string.Empty)
@@ -67,21 +69,24 @@ public class LanguageParser : BaseParser
         {
             if (wordIdx == 0)
             {
+               // this is failing on Japanese Years 1 to 2
                 throw new Exception("Year Level not found");
             }
+
             try
             {
-                yearLevelValue = Enum.Parse<YearLevelValue>(desc[wordIdx..].Replace(" ", string.Empty));
+                var str = desc[wordIdx..];
+                var formattedStr = str.Replace(" to ", "To").Replace(" ", string.Empty);
+                yearLevelValue = Enum.Parse<YearLevelValue>(formattedStr);
                 break;
             }
             catch
             {
                 wordIdx--;
-                continue;
             }
         } while (true);
 
-        description = desc[0..wordIdx].Trim();
+        description = desc[..wordIdx].Trim();
 
         var learningStandardBuilder = new StringBuilder();
         idx++;

@@ -1,10 +1,11 @@
 using FakeItEasy;
 using FluentAssertions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
 using TeachPlanner.Api.Features.Subjects;
-using TeachPlanner.Api.UnitTests.Helpers;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Api.Tests.Helpers.Domain;
 
-namespace TeachPlanner.Api.UnitTests.Features.Subjects;
+namespace TeachPlanner.Api.Tests.Features.Subjects;
+
 public class GetSubjectsTests
 {
     private readonly ISubjectRepository _subjectRepository;
@@ -15,14 +16,14 @@ public class GetSubjectsTests
     }
 
     [Fact]
-    public async void Handler_WhenNoElaborationsRequested_ShouldReturnCurriculumSubjectsWithoutElaborations()
+    public async Task Handler_WhenNoElaborationsRequested_ShouldReturnCurriculumSubjectsWithoutElaborations()
     {
         // Arrange
         var subjects = SubjectHelpers.CreateCurriculumSubjects();
-        var query = new GetCurriculumSubjects.Query(false);
+        var query = new GetCurriculumSubjects.Query();
         var handler = new GetCurriculumSubjects.Handler(_subjectRepository);
 
-        A.CallTo(() => _subjectRepository.GetCurriculumSubjects(query.IncludeElaborations, A<CancellationToken>._)).Returns(subjects);
+        A.CallTo(() => _subjectRepository.GetCurriculumSubjects(A<CancellationToken>._)).Returns(subjects);
 
         // Act
         var result = await handler.Handle(query, new CancellationToken());

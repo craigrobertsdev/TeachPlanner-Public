@@ -1,13 +1,12 @@
 using MediatR;
-using TeachPlanner.Shared.Common.Interfaces.Curriculum;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Api.Interfaces.Curriculum;
+using TeachPlanner.Api.Interfaces.Persistence;
 
 namespace TeachPlanner.Api.Features.Curriculum;
 
 public static class ParseCurriculum
 {
-    public static async Task<IResult> Delegate(ISender sender, CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint(ISender sender, CancellationToken cancellationToken)
     {
         var command = new Command();
         await sender.Send(command, cancellationToken);
@@ -33,7 +32,7 @@ public static class ParseCurriculum
 
         public async Task Handle(Command request, CancellationToken cancellationToken)
         {
-            var subjects = _curriculumParser.ParseCurriculum();
+            var subjects = await _curriculumParser.ParseCurriculum();
             await _curriculumRepository.AddCurriculum(subjects, cancellationToken);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }

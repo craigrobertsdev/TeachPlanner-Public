@@ -1,12 +1,13 @@
 @using TeachPlanner.BlazorClient.Components.Shared
 @using TeachPlanner.BlazorClient.Models.Resources
-
 <TabView Centered="true" Gap="true">
     <TabPage Title="Resources">
-        @if (Resources?.Count > 0) {
+        @if (Resources?.Count > 0)
+        {
             var resources = FilterResources(Resources);
-            <ItemsList TItem="ResourceModel" Items=resources>
-                @foreach (var resource in resources) {
+            <ItemsList TItem="Resource" Items=resources>
+                @foreach (var resource in resources)
+                {
                     <a target="_blank" href="@resource.Url" class="text-darkGreen underline">
                         <ListItem Item="resource" Selectable=false>
                             @resource.Name
@@ -15,17 +16,20 @@
                 }
             </ItemsList>
         }
-        else {
+        else
+        {
             <div class="flex justify-center align-center h-full p-2">
                 No resources selected for this lesson
             </div>
         }
     </TabPage>
     <TabPage Title="Assessments">
-        @if (Resources.Count > 0) {
+        @if (Resources.Count > 0)
+        {
             var assessments = FilterAssessments(Resources);
-            <ItemsList TItem="ResourceModel" Items=assessments>
-                @foreach (var assessment in assessments) {
+            <ItemsList TItem="Resource" Items=assessments>
+                @foreach (var assessment in assessments)
+                {
                     <a target="_blank" href="@assessment.Url" class="text-darkGreen underline">
                         <ListItem Item="assessment" Selectable=false>
                             @assessment.Name
@@ -34,7 +38,8 @@
                 }
             </ItemsList>
         }
-        else {
+        else
+        {
             <div class="flex justify-center align-center h-full p-2 text-center">
                 No assessments planned for this lesson
             </div>
@@ -43,13 +48,16 @@
 </TabView>
 
 @code {
-    [Parameter]
-    public List<ResourceModel> Resources { get; set; } = [];
-    private List<ResourceModel> FilterResources(List<ResourceModel> resources) {
+    [Parameter] public List<Resource> Resources { get; set; } = [];
+
+    private List<Resource> FilterResources(List<Resource> resources)
+    {
         return resources.Where(r => r.IsAssessment == false).ToList();
     }
 
-    private List<ResourceModel> FilterAssessments(List<ResourceModel> resources) {
-        return resources.Where(r => r.IsAssessment == true).ToList();
+    private List<Resource> FilterAssessments(List<Resource> resources)
+    {
+        return resources.Where(r => r.IsAssessment).ToList();
     }
+
 }

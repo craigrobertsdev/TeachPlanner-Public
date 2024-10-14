@@ -1,0 +1,19 @@
+  {
+  "sage": "#90AEB2",
+  "lightSage": "#C5D5D7",
+  "darkSage": "#5B7D82",
+  "offWhite": "#f4f7f7",
+  "charcoal": "#2D3E40",
+  "accent1": "#E6A57E",
+  "accent2": "#d1e0cb"
+ } 
+  {
+  "English": "#4A90E2",
+  "Mathematics": "#F5A623",
+  "Science": "#7ED321",
+  "HumanitiesAndSocialSciences": "#BD10E0",
+  "HealthAndPhysicalEducation": "#50E3C2",
+  "Languages": "#FF5A5F",
+  "Technologies": "#9013FE",
+  "Arts": "#FF6B6B"
+}

@@ -1,12 +1,12 @@
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.LessonPlans;
 
 public static class CheckLessonOverlap
 {
-    public static async Task<bool> Delegate(
+    public static async Task<bool> Endpoint(
         Guid teacherId,
         Guid? lessonPlanId,
         DateOnly lessonDate,
@@ -21,7 +21,9 @@ public static class CheckLessonOverlap
             throw new ArgumentOutOfRangeException("Lesson number and number of periods must not be less than 0");
         }
 
-        var yearData = await yearDataRepository.GetByTeacherIdAndYear(new TeacherId(teacherId), lessonDate.Year, cancellationToken);
+        var yearData =
+            await yearDataRepository.GetByTeacherIdAndYear(new TeacherId(teacherId), lessonDate.Year,
+                cancellationToken);
         if (yearData == null)
         {
             throw new YearDataNotFoundException();
@@ -33,19 +35,21 @@ public static class CheckLessonOverlap
             return false;
         }
 
-        if (lessonPlanId is not null && lessonPlans.Any(lp => lp.Id.Value == lessonPlanId && lp.NumberOfPeriods == numberOfPeriods))
+        if (lessonPlanId is not null &&
+            lessonPlans.Any(lp => lp.Id.Value == lessonPlanId && lp.NumberOfLessons == numberOfPeriods))
         {
             return false;
         }
 
-        var lp = lessonPlans.Where(lp => lp.StartPeriod == lessonNumber).FirstOrDefault();
+        var lp = lessonPlans.FirstOrDefault(lp => lp.StartPeriod == lessonNumber);
 
         if (lp is not null && lp?.Id.Value != lessonPlanId)
         {
             return true;
         }
 
-        if (lessonPlans.Where(lp => lp.StartPeriod > lessonNumber && lp.StartPeriod < lessonNumber + numberOfPeriods).Any())
+        if (lessonPlans.Where(lp => lp.StartPeriod > lessonNumber && lp.StartPeriod < lessonNumber + numberOfPeriods)
+            .Any())
         {
             return true;
         }

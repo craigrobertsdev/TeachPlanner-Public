@@ -1,10 +1,12 @@
-using TeachPlanner.Shared.Domain.Common.Enums;
+using TeachPlanner.Shared.Enums;
 
 namespace TeachPlanner.Api.Features.Curriculum;
 
 public static class GetYearLevels
 {
-    private static List<YearLevelValue> YearLevels = [
+    private static readonly List<YearLevelValue> YearLevels =
+    [
+        YearLevelValue.Reception,
         YearLevelValue.Year1,
         YearLevelValue.Year2,
         YearLevelValue.Year3,
@@ -15,9 +17,9 @@ public static class GetYearLevels
         YearLevelValue.Year8,
         YearLevelValue.Year9,
         YearLevelValue.Year10
-        ];
+    ];
 
-    public static async Task<IResult> Delegate()
+    public static async Task<IResult> Endpoint()
     {
         await Task.CompletedTask;
         return Results.Ok(YearLevels);

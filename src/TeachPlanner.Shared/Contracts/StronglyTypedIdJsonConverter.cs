@@ -1,9 +1,10 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using TeachPlanner.Shared.Domain.Common.Interfaces;
+using TeachPlanner.Shared.Interfaces;
 
 namespace TeachPlanner.Shared.Contracts;
+
 public class StronglyTypedIdJsonConverter<T> : JsonConverterFactory where T : IStronglyTypedId
 {
     public override bool CanConvert(Type typeToConvert)
@@ -13,12 +14,12 @@ public class StronglyTypedIdJsonConverter<T> : JsonConverterFactory where T : IS
 
     public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
     {
-        JsonConverter converter = (JsonConverter)Activator.CreateInstance(
+        var converter = (JsonConverter)Activator.CreateInstance(
             typeof(StronglyTypedIdConverterInner),
             BindingFlags.Instance | BindingFlags.Public,
-            binder: null,
-            args: new object[] { options },
-            culture: null)!;
+            null,
+            [options],
+            null)!;
 
         return converter;
     }
@@ -42,9 +43,9 @@ public class StronglyTypedIdJsonConverter<T> : JsonConverterFactory where T : IS
             var id = (T)Activator.CreateInstance(
                 typeToConvert,
                 BindingFlags.Public | BindingFlags.Instance,
-                binder: null,
-                args: new object[] { Guid.Empty },
-                culture: null)!;
+                null,
+                [Guid.Empty],
+                null)!;
 
             while (reader.Read())
             {
@@ -66,7 +67,6 @@ public class StronglyTypedIdJsonConverter<T> : JsonConverterFactory where T : IS
             }
 
             throw new JsonException();
-
         }
 
         public override void Write(Utf8JsonWriter writer, T value, JsonSerializerOptions options)

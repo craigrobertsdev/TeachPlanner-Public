@@ -1,4 +1,4 @@
-using TeachPlanner.Shared.Domain.Common.Enums;
+using TeachPlanner.Shared.Enums;
 
 namespace TeachPlanner.Shared.Contracts.Resources;
 

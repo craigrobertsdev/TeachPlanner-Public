@@ -7,29 +7,29 @@ public static class AuthenticationValidators
 {
     public static bool IsValidPassword(string password)
     {
-        bool hasNonAlpha = false;
-        bool hasNumeral = false;
-        bool hasLower = false;
-        bool hasUpper = false;
+        var hasNonAlpha = false;
+        var hasNumeral = false;
+        var hasLower = false;
+        var hasUpper = false;
 
         foreach (var c in password.ToCharArray())
         {
-            if (Char.IsDigit(c))
+            if (char.IsDigit(c))
             {
                 hasNumeral = true;
             }
 
-            if (Char.IsLower(c))
+            if (char.IsLower(c))
             {
                 hasLower = true;
             }
 
-            if (Char.IsUpper(c))
+            if (char.IsUpper(c))
             {
                 hasUpper = true;
             }
 
-            if (!Char.IsPunctuation(c))
+            if (!char.IsPunctuation(c))
             {
                 hasNonAlpha = true;
             }
@@ -57,7 +57,7 @@ public static class AuthenticationValidators
                 var idn = new IdnMapping();
 
                 // Pull out and process domain name (throws ArgumentException on invalid)
-                string domainName = idn.GetAscii(match.Groups[2].Value);
+                var domainName = idn.GetAscii(match.Groups[2].Value);
 
                 return match.Groups[1].Value + domainName;
             }
@@ -74,12 +74,11 @@ public static class AuthenticationValidators
         try
         {
             return Regex.IsMatch(email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$",
-                    RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
+                RegexOptions.IgnoreCase, TimeSpan.FromMilliseconds(250));
         }
         catch (RegexMatchTimeoutException)
         {
             return false;
         }
     }
-
 }

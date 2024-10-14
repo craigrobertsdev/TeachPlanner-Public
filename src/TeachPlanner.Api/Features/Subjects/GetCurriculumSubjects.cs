@@ -1,22 +1,22 @@
 using MediatR;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Api.Domain.Curriculum;
+using TeachPlanner.Api.Interfaces.Persistence;
 
 namespace TeachPlanner.Api.Features.Subjects;
 
 public static class GetCurriculumSubjects
 {
-    public static async Task<IResult> Delegate(bool includeElaborations, ISender sender,
+    public static async Task<IResult> Endpoint(bool includeElaborations, ISender sender,
         CancellationToken cancellationToken)
     {
-        var query = new Query(includeElaborations);
+        var query = new Query();
 
         var result = await sender.Send(query, cancellationToken);
 
         return Results.Ok(result);
     }
 
-    public record Query(bool IncludeElaborations) : IRequest<List<CurriculumSubject>>;
+    public record Query() : IRequest<List<CurriculumSubject>>;
 
     public sealed class Handler : IRequestHandler<Query, List<CurriculumSubject>>
     {
@@ -30,7 +30,7 @@ public static class GetCurriculumSubjects
         public async Task<List<CurriculumSubject>> Handle(Query request, CancellationToken cancellationToken)
         {
             var subjects =
-                await _subjectRepository.GetCurriculumSubjects(request.IncludeElaborations, cancellationToken);
+                await _subjectRepository.GetCurriculumSubjects(cancellationToken);
 
             return subjects;
         }

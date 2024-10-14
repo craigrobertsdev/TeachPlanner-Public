@@ -1,22 +1,23 @@
-@if (Parent.ActiveTab == this) {
+@if (Parent.ActiveTab == this)
+{
     @ChildContent
 }
 
 @code {
-    [CascadingParameter]
-    public TabView Parent { get; set; } = default!;
+    [CascadingParameter] public TabView Parent { get; set; } = default!;
 
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    [Parameter]
-    public string Title { get; set; } = string.Empty;
+    [Parameter] public string Title { get; set; } = string.Empty;
 
-    protected override void OnInitialized() {
-        if (Parent == null) {
+    protected override void OnInitialized()
+    {
+        if (Parent == null)
+        {
             throw new ArgumentException(nameof(Parent), "TabPage must be used within a TabView");
         }
 
         Parent.AddPage(this);
     }
+
 }

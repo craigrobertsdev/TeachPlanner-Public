@@ -1,5 +1,5 @@
 async function loadStateFromLocalStorage() {
-    var state = await localStorage.getItem("teacherId");
+    const state = localStorage.getItem("teacherId");
 
     if (state === null) {
         console.log("No state found in local storage");
@@ -10,11 +10,18 @@ async function loadStateFromLocalStorage() {
 }
 
 async function getTokenFromLocalStorage() {
-    var token = await localStorage.getItem("JWT_KEY");
-    return token;
+    return localStorage.getItem("JWT_KEY");
 }
 
 async function getAccountSetupStatus() {
-    var accountSetupComplete = await localStorage.getItem("AccountSetupComplete");
-    return accountSetupComplete == "true" ? true : false;
+    const accountSetupComplete = localStorage.getItem("AccountSetupComplete");
+    return accountSetupComplete === "true";
+}
+
+async function getAccountSettings() {
+    const settingsString = localStorage.getItem("settings");
+    console.log(settingsString);
+    const settings = JSON.parse(settingsString);
+    console.log(settings);
+    return settings;
 }

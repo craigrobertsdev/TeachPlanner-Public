@@ -1,15 +1,15 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
+using TeachPlanner.Api.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Persistence;
 using TeachPlanner.Shared.Contracts.Resources;
-using TeachPlanner.Shared.Domain.Curriculum;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.Teachers;
 
 public static class GetResources
 {
-    public static async Task<IResult> Delegate([FromRoute] Guid teacherId, [FromRoute] Guid subjectId, ISender sender,
+    public static async Task<IResult> Endpoint([FromRoute] Guid teacherId, [FromRoute] Guid subjectId, ISender sender,
         CancellationToken cancellationToken)
     {
         var query = new Query(new TeacherId(teacherId), new SubjectId(subjectId));

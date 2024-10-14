@@ -1,80 +1,20 @@
-﻿@using Blazorise.RichTextEdit;
-@using TeachPlanner.BlazorClient.Pages
+﻿@using static Pages.LessonPlanner
 
-<RichTextEdit @ref="Editor"
-              id="rte"
-              ContentChanged="HandleChange"
-              ToolbarPosition="Blazorise.Placement.Top">
-    <Toolbar>
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarButton Action="RichTextEditAction.Bold" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.Italic" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.Underline" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.Strike" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.Blockquote" />
-        </RichTextEditToolbarGroup>
+<TinyMCE.Blazor.Editor ScriptSrc="/js/tinymce/tinymce.min.js" JsConfSrc="tinymceConf" Value="@Text"/>
 
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarSelect Action="RichTextEditAction.Size">
-                <RichTextEditToolbarSelectItem Value="small" />
-                <RichTextEditToolbarSelectItem Selected />
-                <RichTextEditToolbarSelectItem Value="large" />
-                <RichTextEditToolbarSelectItem Value="huge">Very Big</RichTextEditToolbarSelectItem>
-            </RichTextEditToolbarSelect>
-        </RichTextEditToolbarGroup>
-
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarSelect Action="RichTextEditAction.Header">
-                <RichTextEditToolbarSelectItem Value="1" />
-                <RichTextEditToolbarSelectItem Value="2" />
-                <RichTextEditToolbarSelectItem Value="3" />
-                <RichTextEditToolbarSelectItem Value="4" />
-                <RichTextEditToolbarSelectItem Value="5" />
-                <RichTextEditToolbarSelectItem Selected>Paragraph</RichTextEditToolbarSelectItem>
-            </RichTextEditToolbarSelect>
-        </RichTextEditToolbarGroup>
-
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarSelect Action="RichTextEditAction.Align">
-                <RichTextEditToolbarSelectItem Selected />
-                <RichTextEditToolbarSelectItem Value="center" />
-                <RichTextEditToolbarSelectItem Value="right" />
-                <RichTextEditToolbarSelectItem Value="justify" />
-            </RichTextEditToolbarSelect>
-        </RichTextEditToolbarGroup>
-
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarButton Action="RichTextEditAction.List" Value="ordered" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.List" Value="bullet" />
-        </RichTextEditToolbarGroup>
-
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarSelect Action="RichTextEditAction.Background"></RichTextEditToolbarSelect>
-            <RichTextEditToolbarSelect Action="RichTextEditAction.Color"></RichTextEditToolbarSelect>
-        </RichTextEditToolbarGroup>
-        <RichTextEditToolbarGroup>
-            <RichTextEditToolbarButton Action="RichTextEditAction.Link" />
-            <RichTextEditToolbarButton Action="RichTextEditAction.Image" />
-        </RichTextEditToolbarGroup>
-    </Toolbar>
-</RichTextEdit>
+<style>
+    .tox-edit-area {
+        cursor: text;
+    }
+</style>
 
 @code {
-    private RichTextEdit Editor { get; set; } = default!;
-    [Parameter] public LessonPlanner Parent { get; set; } = default!;
-    [Parameter] public string PlanningNotes { get; set; } = string.Empty;
+    [Inject] public IJSRuntime JSRuntime { get; set; } = default!;
+    [Parameter] public string Text { get; set; } = string.Empty;
 
-    protected override async Task OnParametersSetAsync()
+    public async Task<RTEContent> GetContent()
     {
-        if (Editor is not null)
-        {
-            await Editor.SetHtmlAsync(PlanningNotes);
-        }
-    }
-
-    private async Task HandleChange()
-    {
-        Parent.PlanningNotes = await Editor.GetTextAsync();
-        Parent.PlanningNotesHtml = await Editor.GetHtmlAsync();
+        var content = await JSRuntime.InvokeAsync<RTEContent>("getRTEContent");
+        return content;
     }
 }

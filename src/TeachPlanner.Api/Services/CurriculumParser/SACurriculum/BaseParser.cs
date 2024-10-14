@@ -2,19 +2,19 @@ using System.Text;
 using Tabula;
 using Tabula.Detectors;
 using Tabula.Extractors;
-using TeachPlanner.Api.Extensions;
-using TeachPlanner.Shared.Domain.Common.Enums;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Api.Domain.Curriculum;
+using TeachPlanner.Shared.Enums;
+using TeachPlanner.Shared.Extensions;
 using UglyToad.PdfPig;
 
 namespace TeachPlanner.Api.Services.CurriculumParser.SACurriculum;
 
 public abstract class BaseParser
 {
-    protected readonly string _subjectName;
     protected readonly char[] _charsToRemove;
-    protected PageType _currentPageType;
+    protected readonly string _subjectName;
     protected int _currentPageNum;
+    protected PageType _currentPageType;
 
     protected BaseParser(string subjectName, char[] charsToRemove)
     {
@@ -27,7 +27,7 @@ public abstract class BaseParser
     public CurriculumSubject ParseFile(string file)
     {
         var yearLevels = new List<YearLevel>();
-        string description = string.Empty;
+        var description = string.Empty;
 
         using var document = PdfDocument.Open(file);
         while (_currentPageNum < document.NumberOfPages)
@@ -64,13 +64,12 @@ public abstract class BaseParser
             idx++;
             word = words[idx];
             if (word == "Reception")
-            { // Handles the first occurrence of the subject name which is in the footer of the page
+            {
+                // Handles the first occurrence of the subject name which is in the footer of the page
                 continue;
             }
-            else
-            {
-                break;
-            }
+
+            break;
         } while (idx < words.Length);
 
         // Get the subject description to pass up to the subject
@@ -84,10 +83,8 @@ public abstract class BaseParser
                 {
                     break;
                 }
-                else
-                {
-                    descriptionBuilder.Append("Learning");
-                }
+
+                descriptionBuilder.Append("Learning");
             }
 
             if (words[idx] == string.Empty)
@@ -110,6 +107,7 @@ public abstract class BaseParser
             {
                 throw new Exception("Year Level not found");
             }
+
             try
             {
                 yearLevelValue = Enum.Parse<YearLevelValue>(desc[wordIdx..].Replace(" ", string.Empty));
@@ -118,11 +116,10 @@ public abstract class BaseParser
             catch
             {
                 wordIdx--;
-                continue;
             }
         } while (true);
 
-        description = desc[0..wordIdx].Trim();
+        description = desc[..wordIdx].Trim();
 
         var learningStandardBuilder = new StringBuilder();
         idx++;
@@ -141,6 +138,7 @@ public abstract class BaseParser
                     learningStandardBuilder.Append("\n\n");
                     prev = words[idx];
                 }
+
                 idx++;
                 continue;
             }
@@ -180,15 +178,13 @@ public abstract class BaseParser
         var rows = table.Rows;
         foreach (var cell in rows[0])
         {
-            dispositions.Add(new Disposition
-            {
-                Title = cell.GetText()
-            });
+            dispositions.Add(new Disposition { Title = cell.GetText() });
         }
 
-        for (int i = 2; i < table.Rows.Count; i++)
-        { // skip the second row's boilerplate text
-            for (int j = 0; j < table.ColumnCount; j++)
+        for (var i = 2; i < table.Rows.Count; i++)
+        {
+            // skip the second row's boilerplate text
+            for (var j = 0; j < table.ColumnCount; j++)
             {
                 var text = rows[i][j].GetText();
 
@@ -205,7 +201,7 @@ public abstract class BaseParser
                 if (text.StartsWith('•'))
                 {
                     var textStart = 1;
-                    for (int k = textStart; k < text.Length; k++)
+                    for (var k = textStart; k < text.Length; k++)
                     {
                         if (!char.IsWhiteSpace(text[k]))
                         {
@@ -213,6 +209,7 @@ public abstract class BaseParser
                             break;
                         }
                     }
+
                     dispositions[j].DevelopedWhen.Add(text[textStart..].CapitaliseFirstLetter());
                 }
                 else
@@ -231,31 +228,32 @@ public abstract class BaseParser
         var rows = table.Rows;
         foreach (var cell in rows[0])
         {
-            capabilities.Add(new Capability
-            {
-                Name = cell.GetText()
-            });
+            capabilities.Add(new Capability { Name = cell.GetText() });
         }
 
         // find the starting row for each disposition column to avoid the boilerplate text overrunning the line
         var rowStarts = new int[table.ColumnCount];
-        for (int i = 1; i < table.Rows.Count; i++)
+        for (var i = 1; i < table.Rows.Count; i++)
         {
-            for (int j = 0; j < table.ColumnCount; j++)
+            for (var j = 0; j < table.ColumnCount; j++)
             {
                 if (rows[i][j].GetText().EndsWith(':'))
-                { // the start of each disposition ends with "for example:"
+                {
+                    // the start of each disposition ends with "for example:"
                     if (rowStarts[j] == 0)
-                    { // takes only the first value to account for situations where one of the capabilities also ends with ':'
+                    {
+                        // takes only the first value to account for situations where one of the capabilities also ends with ':'
                         rowStarts[j] = i + 1;
                     }
                 }
             }
         }
+
         var startIdx = rowStarts.Min();
-        for (int i = startIdx; i < table.Rows.Count; i++)
-        { // skip the second row's boilerplate text
-            for (int j = 0; j < table.ColumnCount; j++)
+        for (var i = startIdx; i < table.Rows.Count; i++)
+        {
+            // skip the second row's boilerplate text
+            for (var j = 0; j < table.ColumnCount; j++)
             {
                 if (i < rowStarts[j])
                 {
@@ -271,7 +269,7 @@ public abstract class BaseParser
                 if (text.StartsWith('•'))
                 {
                     var textStart = 1;
-                    for (int k = textStart; k < text.Length; k++)
+                    for (var k = textStart; k < text.Length; k++)
                     {
                         if (!char.IsWhiteSpace(text[k]))
                         {
@@ -279,6 +277,7 @@ public abstract class BaseParser
                             break;
                         }
                     }
+
                     capabilities[j].Descriptors.Add(text[textStart..].CapitaliseFirstLetter());
                 }
                 else
@@ -340,7 +339,7 @@ public abstract class BaseParser
                     ParseKnowledgeWithoutContentDescriptionsTable(table, conceptualOrganisers);
                     break;
                 case PageType.ContentDescriptionsOnly:
-                    int idx = 1;
+                    var idx = 1;
                     ParseContentDescriptions(table, conceptualOrganisers, ref idx);
                     break;
                 case PageType.AdditionalContentDescriptions:
@@ -361,18 +360,16 @@ public abstract class BaseParser
         var rows = table.Rows;
         foreach (var cell in rows[0])
         {
-            conceptualOrganisers.Add(new ConceptualOrganiser
-            {
-                Name = cell.GetText()
-            });
+            conceptualOrganisers.Add(new ConceptualOrganiser { Name = cell.GetText() });
         }
 
         var rowIdx = 1;
         // find the starting row for each "Why it matters" section column as they are all different length
         var rowStarts = new int[table.ColumnCount];
         do
-        { // What it is 
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // What it is 
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 var text = rows[rowIdx][i].GetText();
                 if (text.StartsWith("What it is"))
@@ -382,24 +379,24 @@ public abstract class BaseParser
                 else if (text.StartsWith("Why it matters"))
                 {
                     rowStarts[i] = rowIdx;
-                    continue;
                 }
                 else if (rowStarts[i] != 0)
                 {
-                    continue;
                 }
                 else
                 {
                     conceptualOrganisers[i].WhatItIs += " " + text;
                 }
             }
+
             rowIdx++;
         } while (rowStarts.Min() == 0);
 
         rowIdx = rowStarts.Min();
         do
-        { // Why it matters
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // Why it matters
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 if (rowIdx < rowStarts[i])
                 {
@@ -416,6 +413,7 @@ public abstract class BaseParser
                     conceptualOrganisers[i].WhyItMatters += " " + text;
                 }
             }
+
             rowIdx++;
         } while (!rows[rowIdx][0].GetText().StartsWith("Conceptual understandings"));
 
@@ -440,16 +438,16 @@ public abstract class BaseParser
 
         // Get the indices in the columns where the new conceptual understandings start.
         var newConceptualUnderstandingsIndices = new List<int>[table.ColumnCount];
-        for (int i = 0; i < table.ColumnCount; i++)
+        for (var i = 0; i < table.ColumnCount; i++)
         {
             var wordString = string.Empty;
-            newConceptualUnderstandingsIndices[i] = new List<int>();
-            for (int j = startIdx; j < rowIdx; j++)
+            newConceptualUnderstandingsIndices[i] = [];
+            for (var j = startIdx; j < rowIdx; j++)
             {
                 wordString += rows[j][i].GetText();
             }
 
-            for (int k = 0; k < wordString.Length - 1; k++)
+            for (var k = 0; k < wordString.Length - 1; k++)
             {
                 if (wordString[k] == '.' && char.IsUpper(wordString[k + 1]))
                 {
@@ -458,13 +456,13 @@ public abstract class BaseParser
             }
         }
 
-        for (int i = 0; i < table.ColumnCount; i++)
+        for (var i = 0; i < table.ColumnCount; i++)
         {
             var understandings = new List<string>();
             var createNewUnderstanding = true;
             var currentIdx = 0;
             var totalLetters = 0;
-            for (int j = startIdx; j < rowIdx; j++)
+            for (var j = startIdx; j < rowIdx; j++)
             {
                 var text = rows[j][i].GetText();
                 if (string.IsNullOrWhiteSpace(text))
@@ -493,8 +491,9 @@ public abstract class BaseParser
                     var idx = newConceptualUnderstandingsIndices[i][currentIdx] - totalLetters;
                     if (idx > 0)
                     {
-                        understandings[^1] += " " + text[0..idx];
+                        understandings[^1] += " " + text[..idx];
                     }
+
                     understandings.Add(text[idx..]);
                     currentIdx++;
                     createNewUnderstanding = false;
@@ -507,6 +506,7 @@ public abstract class BaseParser
 
                 totalLetters += text.Length;
             }
+
             conceptualOrganisers[i].ConceptualUnderstandings = understandings;
         }
     }
@@ -529,18 +529,21 @@ public abstract class BaseParser
         var rows = table.Rows;
 
         do
-        { // supporting content descriptions
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // supporting content descriptions
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 var text = rows[rowIdx][i].GetText();
                 if (string.IsNullOrWhiteSpace(text))
                 {
                     continue;
                 }
+
                 if (IsOnlyCurriculumCodes(text) && CurriculumCodesAreAlreadyCaptured(conceptualOrganisers[i], text))
                 {
                     continue;
                 }
+
                 if (IsContentDescriptionEnd(text))
                 {
                     var curriculumCodeStart = FindCurriculumCodeIdx(text);
@@ -550,8 +553,10 @@ public abstract class BaseParser
                     }
 
 
-                    var curriculumCodes = text[curriculumCodeStart..].Length > 0 ? text[curriculumCodeStart..].Split(' ') : [];
-                    var descriptionText = text[0..curriculumCodeStart];
+                    var curriculumCodes = text[curriculumCodeStart..].Length > 0
+                        ? text[curriculumCodeStart..].Split(' ')
+                        : [];
+                    var descriptionText = text[..curriculumCodeStart];
                     if (rowIdx + 1 < rows.Count && rows[rowIdx + 1][i].GetText().StartsWith("AC9"))
                     {
                         var extraCurriculumCodes = rows[rowIdx + 1][i].GetText().Split(' ');
@@ -561,8 +566,10 @@ public abstract class BaseParser
                     AddContentDescriptionText(conceptualOrganisers[i], descriptionText, contentDescriptionCounts[i]);
                     if (curriculumCodes.Length > 0)
                     {
-                        conceptualOrganisers[i].ContentDescriptions[contentDescriptionCounts[i]].CurriculumCodes = curriculumCodes;
+                        conceptualOrganisers[i].ContentDescriptions[contentDescriptionCounts[i]].CurriculumCodes =
+                            curriculumCodes;
                     }
+
                     contentDescriptionCounts[i]++;
                 }
                 else
@@ -597,23 +604,22 @@ public abstract class BaseParser
         return text.Split(' ').All(t => t.StartsWith("AC9"));
     }
 
-    private void ParseKnowledgeWithoutContentDescriptionsTable(Table table, List<ConceptualOrganiser> conceptualOrganisers)
+    private void ParseKnowledgeWithoutContentDescriptionsTable(Table table,
+        List<ConceptualOrganiser> conceptualOrganisers)
     {
         var rows = table.Rows;
         foreach (var cell in rows[0])
         {
-            conceptualOrganisers.Add(new ConceptualOrganiser
-            {
-                Name = cell.GetText()
-            });
+            conceptualOrganisers.Add(new ConceptualOrganiser { Name = cell.GetText() });
         }
 
         var rowIdx = 1;
         // find the starting row for each "Why it matters" section column as they are all different length
         var rowStarts = new int[table.ColumnCount];
         do
-        { // What it is 
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // What it is 
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 var text = rows[rowIdx][i].GetText();
                 if (text.StartsWith("What it is"))
@@ -623,20 +629,21 @@ public abstract class BaseParser
                 else if (text.StartsWith("Why it matters"))
                 {
                     rowStarts[i] = rowIdx;
-                    continue;
                 }
                 else
                 {
                     conceptualOrganisers[i].WhatItIs += " " + text;
                 }
             }
+
             rowIdx++;
         } while (rowStarts.Min() == 0);
 
         rowIdx = rowStarts.Min();
         do
-        { // Why it matters
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // Why it matters
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 if (rowIdx < rowStarts[i])
                 {
@@ -653,14 +660,16 @@ public abstract class BaseParser
                     conceptualOrganisers[i].WhyItMatters += " " + text;
                 }
             }
+
             rowIdx++;
         } while (!rows[rowIdx][0].GetText().StartsWith("Conceptual understandings"));
 
         rowIdx++; // skip conceptual understandings row
 
         do
-        { // Conceptual understandings
-            for (int i = 0; i < table.ColumnCount; i++)
+        {
+            // Conceptual understandings
+            for (var i = 0; i < table.ColumnCount; i++)
             {
                 var text = rows[rowIdx][i].GetText();
                 if (text.EndsWith('.'))
@@ -672,6 +681,7 @@ public abstract class BaseParser
                     conceptualOrganisers[i].ConceptualUnderstandings.Add(text + " ");
                 }
             }
+
             rowIdx++;
         } while (rowIdx < rows.Count);
     }
@@ -682,7 +692,7 @@ public abstract class BaseParser
         var contentDescriptionCounts = conceptualOrganisers.Select(c => c.ContentDescriptions.Count).ToArray();
 
         // a content description will be partial if it has no curriculumCodes or has curriculumCodes but the next row starts with a curriculum code
-        for (int i = 0; i < table.ColumnCount; i++)
+        for (var i = 0; i < table.ColumnCount; i++)
         {
             if (conceptualOrganisers[i].ContentDescriptions.Count == 0)
             {
@@ -699,7 +709,7 @@ public abstract class BaseParser
             }
         }
 
-        for (int i = 0; i < table.ColumnCount; i++)
+        for (var i = 0; i < table.ColumnCount; i++)
         {
             // the spreadsheet algorithm that we are using for this function specifically generates a single row with all the text in one. 
             var content = rows[0][i].GetText();
@@ -710,7 +720,7 @@ public abstract class BaseParser
 
             var words = content.Replace('\r', ' ').Split(' ');
 
-            for (int j = 0; j < words.Length; j++)
+            for (var j = 0; j < words.Length; j++)
             {
                 var text = "";
                 var curriculumCodes = new List<string>();
@@ -728,7 +738,8 @@ public abstract class BaseParser
 
                 AddContentDescriptionText(conceptualOrganisers[i], text, contentDescriptionCounts[i]);
 
-                conceptualOrganisers[i].ContentDescriptions[contentDescriptionCounts[i]].CurriculumCodes = [.. curriculumCodes];
+                conceptualOrganisers[i].ContentDescriptions[contentDescriptionCounts[i]].CurriculumCodes =
+                    [.. curriculumCodes];
                 contentDescriptionCounts[i]++;
             }
         }
@@ -741,7 +752,7 @@ public abstract class BaseParser
 
     private static int FindCurriculumCodeIdx(string text)
     {
-        for (int i = 0; i < text.Length - 1; i++)
+        for (var i = 0; i < text.Length - 1; i++)
         {
             if (text[i] == 'A' && text[i + 1] == 'C' && text[i + 2] == '9')
             {
@@ -749,7 +760,8 @@ public abstract class BaseParser
             }
         }
 
-        return text.Length; // addresses situations where the text has no curriculumCode but the string ends with '^' or similar 
+        return
+            text.Length; // addresses situations where the text has no curriculumCode but the string ends with '^' or similar 
     }
 
     private void AddContentDescriptionText(ConceptualOrganiser co, string text, int idx)
@@ -766,10 +778,9 @@ public abstract class BaseParser
 
         if (co.ContentDescriptions.Count <= idx)
         {
-            co.ContentDescriptions.Add(new()
+            co.ContentDescriptions.Add(new ContentDescription
             {
-                ConceptualOrganiser = co,
-                Text = text.CapitaliseFirstLetter()
+                ConceptualOrganiser = co, Text = text.CapitaliseFirstLetter()
             });
         }
         else
@@ -798,6 +809,7 @@ public abstract class BaseParser
         {
             hasConceptualUnderstandings = true;
         }
+
         if (text.Contains("Supporting content descriptions"))
         {
             hasSupportingContentDescriptionsTitle = true;
@@ -811,7 +823,6 @@ public abstract class BaseParser
             (false, false, PageType.AdditionalContentDescriptions) => PageType.LearningStandard,
             (false, false, _) => PageType.AdditionalContentDescriptions
         };
-
     }
 
     private static void RemoveUnusedConceptualOrganisers(YearLevel yearLevel)

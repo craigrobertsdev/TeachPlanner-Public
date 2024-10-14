@@ -44,10 +44,11 @@ public static class RouteMapper
     private static RouteGroupBuilder MapAuth(this RouteGroupBuilder group)
     {
         var authGroup = group.MapGroup("/authentication");
-        authGroup.MapPost("/register", Register.Delegate);
-        authGroup.MapPost("/login", Login.Delegate);
-        authGroup.MapPost("/refresh", Refresh.Delegate);
-        authGroup.MapPost("/revoke", Revoke.Delegate);
+        authGroup.MapPost("/register", Register.Endpoint);
+        authGroup.MapPost("/login", Login.Endpoint);
+        authGroup.MapPost("/refresh", Refresh.Endpoint);
+        authGroup.MapPost("/revoke", Revoke.Endpoint);
+        authGroup.MapGet("/me", GetMe.Endpoint);
 
         return group;
     }
@@ -62,18 +63,20 @@ public static class RouteMapper
     private static RouteGroupBuilder MapCurriculum(this RouteGroupBuilder group)
     {
         var curriculumGroup = group.MapGroup("/curriculum");
-        curriculumGroup.MapGet("/subject-names", GetCurriculumSubjectNames.Delegate);
-        curriculumGroup.MapGet("/content-descriptions", GetContentDescriptions.Delegate);
-        curriculumGroup.MapGet("/yearLevels", GetYearLevels.Delegate);
+        curriculumGroup.MapGet("/subject-names", GetCurriculumSubjectNames.Endpoint);
+        curriculumGroup.MapGet("/content-descriptions", GetContentDescriptions.Endpoint);
+        curriculumGroup.MapGet("/yearLevels", GetYearLevels.Endpoint);
+        curriculumGroup.MapGet("/term-dates", GetTermDates.Endpoint);
         return group;
     }
 
     private static RouteGroupBuilder MapLessonPlans(this RouteGroupBuilder group)
     {
         var lessonPlanGroup = group.MapGroup("/lesson-plans");
-        lessonPlanGroup.MapGet("/", GetLessonPlan.Delegate);
-        lessonPlanGroup.MapPost("/", CreateLessonPlan.Delegate);
-        lessonPlanGroup.MapGet("/check-overlap", CheckLessonOverlap.Delegate);
+        lessonPlanGroup.MapGet("/", GetLessonPlan.Endpoint);
+        lessonPlanGroup.MapPost("/", CreateLessonPlan.Endpoint);
+        lessonPlanGroup.MapPatch("/", UpdateLessonPlan.Endpoint);
+        lessonPlanGroup.MapGet("/check-overlap", CheckLessonOverlap.Endpoint);
 
         return group;
     }
@@ -81,9 +84,8 @@ public static class RouteMapper
     private static RouteGroupBuilder MapServices(this RouteGroupBuilder group)
     {
         var serviceGroup = group.MapGroup("/services");
-        serviceGroup.MapPost("/term-dates", SetTermDates.Delegate);
-        serviceGroup.MapGet("/term-dates", GetTermDates.Delegate);
-        serviceGroup.MapPost("/parse-curriculum", ParseCurriculum.Delegate);
+        serviceGroup.MapPost("/term-dates", SetTermDates.Endpoint);
+        serviceGroup.MapPost("/parse-curriculum", ParseCurriculum.Endpoint);
 
         return serviceGroup;
     }
@@ -97,7 +99,7 @@ public static class RouteMapper
     private static RouteGroupBuilder MapSubjects(this RouteGroupBuilder group)
     {
         var subjectGroup = group.MapGroup("/subjects");
-        subjectGroup.MapGet("/curriculum", GetCurriculumSubjects.Delegate);
+        subjectGroup.MapGet("/curriculum", GetCurriculumSubjects.Endpoint);
 
         return group;
     }
@@ -105,13 +107,13 @@ public static class RouteMapper
     private static RouteGroupBuilder MapTeachers(this RouteGroupBuilder group)
     {
         var teacherGroup = group.MapGroup("");
-        teacherGroup.MapGet("/check-account-setup", GetAccountSetupStatus.Delegate);
-        teacherGroup.MapGet("/settings", GetTeacherSettings.Delegate);
-        teacherGroup.MapGet("/resources/{subjectId}", GetResources.Delegate);
-        teacherGroup.MapGet("/year-levels-taught", GetYearLevelsTaught.Delegate);
-        teacherGroup.MapPost("/resources", CreateResource.Delegate);
-        teacherGroup.MapPost("/setup", AccountSetup.Delegate);
-        teacherGroup.MapDelete("/", DeleteAccount.Delegate);
+        teacherGroup.MapGet("/check-account-setup", GetAccountSetupStatus.Endpoint);
+        teacherGroup.MapGet("/settings", GetTeacherSettings.Endpoint);
+        teacherGroup.MapGet("/resources/{subjectId:guid}", GetResources.Endpoint);
+        teacherGroup.MapGet("/year-levels-taught", GetYearLevelsTaught.Endpoint);
+        teacherGroup.MapPost("/resources", CreateResource.Endpoint);
+        teacherGroup.MapPost("/setup", AccountSetup.Endpoint);
+        teacherGroup.MapDelete("/", DeleteAccount.Endpoint);
 
         return group;
     }
@@ -119,8 +121,8 @@ public static class RouteMapper
     private static RouteGroupBuilder MapTemplates(this RouteGroupBuilder group)
     {
         var templateGroup = group.MapGroup("/templates");
-        templateGroup.MapPatch("/", UpdateWeekStructure.Delegate);
-        templateGroup.MapGet("/create", GetLessonTemplateCreatorData.Delegate);
+        templateGroup.MapPatch("/", UpdateWeekStructure.Endpoint);
+        templateGroup.MapGet("/create", GetLessonTemplateCreatorData.Endpoint);
 
         return group;
     }
@@ -128,30 +130,30 @@ public static class RouteMapper
     private static RouteGroupBuilder MapTermPlanners(this RouteGroupBuilder group)
     {
         var termPlannerGroup = group.MapGroup("/term-planners");
-        termPlannerGroup.MapPost("/", CreateTermPlanner.Delegate);
-        termPlannerGroup.MapGet("/", GetTermPlanner.Delegate);
+        termPlannerGroup.MapPost("/", CreateTermPlanner.Endpoint);
+        termPlannerGroup.MapGet("/", GetTermPlanner.Endpoint);
         return group;
     }
 
     private static RouteGroupBuilder MapWeekPlanners(this RouteGroupBuilder group)
     {
         var weekPlannerGroup = group.MapGroup("/week-planner");
-        weekPlannerGroup.MapGet("/", GetWeekPlanner.Delegate);
-        weekPlannerGroup.MapPost("/", CreateWeekPlanner.Delegate);
+        weekPlannerGroup.MapGet("/", GetWeekPlanner.Endpoint);
+        weekPlannerGroup.MapPost("/", CreateWeekPlanner.Endpoint);
         return group;
     }
 
     private static RouteGroupBuilder MapYearData(this RouteGroupBuilder group)
     {
         var yearDataGroup = group.MapGroup("/year-data");
-        yearDataGroup.MapPost("/set-subjects", SetSubjectsTaught.Delegate);
+        yearDataGroup.MapPost("/set-subjects", SetSubjectsTaught.Endpoint);
         return group;
     }
 
     private static RouteGroupBuilder MapDevelopmentEndpoints(this RouteGroupBuilder group)
     {
         var devGroup = group.MapGroup("/");
-        devGroup.MapPost("/add-test-resources", CreateResourceDataForTesting.Delegate);
+        devGroup.MapPost("/add-test-resources", CreateResourceDataForTesting.Endpoint);
         return group;
     }
 }

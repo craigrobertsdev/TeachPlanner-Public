@@ -2,28 +2,25 @@
 @inject NavigationManager NavManager
 
 <div class="row-start-@Row col-start-@Col h-full w-full border-r-2 border-b-2 border-darkGreenBorder cursor-pointer">
-    <button class="h-full w-full hover:shadow-inner hover:text-lg" @onclick=HandleClick>
+    <button class="h-full w-full hover:shadow-inner hover:text-lg" @onclick="HandleClick">
         Test
     </button>
 </div>
 
 @code {
-    [Parameter]
-    public int Row { get; set; }
+    [Parameter] public int Row { get; set; }
 
-    [Parameter]
-    public int Col { get; set; }
+    [Parameter] public int Col { get; set; }
 
-    [Parameter]
-    public LessonPlanModel? LessonPlan  { get; set; }
+    [Parameter] public LessonPlan? LessonPlan { get; set; }
 
-    [Parameter]
-    public DateOnly Date { get; set; }
+    [Parameter] public DateOnly Date { get; set; }
 
-    [Parameter]
-    public int PeriodNumber { get; set; }
+    [Parameter] public int PeriodNumber { get; set; }
 
-    private void HandleClick() {
+    private void HandleClick()
+    {
         NavManager.NavigateTo($"/lesson-planner?date={Date.ToString("dd-MM-yyyy")}&PeriodNumber={PeriodNumber}");
     }
+
 }

@@ -1,24 +1,26 @@
 using FluentValidation;
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Common.Interfaces.Services;
-using TeachPlanner.Shared.Domain.Curriculum;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Api.Interfaces.Services;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.YearDataRecords;
 
 public static class SetSubjectsTaught
 {
-    public static async Task<IResult> Delegate(Guid teacherId, ISender sender, CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint(Guid teacherId, ISender sender, CancellationToken cancellationToken)
     {
         var command = new Command(
             new TeacherId(teacherId),
-            new List<SubjectId>(),
+            [],
             DateTime.Now.Year);
 
-        var validationResult = new Validator().Validate(command);
-        if (!validationResult.IsValid) throw new ValidationException(validationResult.Errors);
+        var validationResult = await new Validator().ValidateAsync(command, cancellationToken);
+        if (!validationResult.IsValid)
+        {
+            throw new ValidationException(validationResult.Errors);
+        }
 
         await sender.Send(command, cancellationToken);
 
@@ -35,7 +37,6 @@ public static class SetSubjectsTaught
     {
         public Validator()
         {
-            RuleFor(x => x.TeacherId).NotEmpty();
             RuleFor(x => x.SubjectIds).NotEmpty();
             RuleFor(x => x.CalendarYear).NotEmpty();
         }
@@ -62,12 +63,18 @@ public static class SetSubjectsTaught
             var yearData =
                 await _yearDataRepository.GetByTeacherIdAndYear(request.TeacherId, request.CalendarYear,
                     cancellationToken);
-            if (yearData == null) throw new YearDataNotFoundException();
+            if (yearData == null)
+            {
+                throw new YearDataNotFoundException();
+            }
 
             var subjects = _curriculumService.CurriculumSubjects
                 .Where(subject => request.SubjectIds.Contains(subject.Id)).ToList();
 
-            if (subjects.Count != request.SubjectIds.Count) throw new InvalidCurriculumSubjectIdException();
+            if (subjects.Count != request.SubjectIds.Count)
+            {
+                throw new InvalidCurriculumSubjectIdException();
+            }
 
             yearData.AddSubjects(subjects);
 

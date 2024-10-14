@@ -2,6 +2,7 @@
 @using TeachPlanner.BlazorClient.Common.Enums
 @using TeachPlanner.BlazorClient.Components.Shared
 @using TeachPlanner.BlazorClient.State
+@using Button = MudBlazor.Button
 @attribute [Authorize]
 
 @inject ApplicationState AppState
@@ -24,14 +25,14 @@
                 </MudSelect>
             </div>
         </div>
-        <br />
+        <br/>
 
         // Number of days of the week worked
         <div class="flex justify-center gap-6 w-full pb-4 border-b border-darkGreenBorder">
             <div class="w-1/3">
                 <h3 class="text-xl pb-2">What days of the week do you work?</h3>
                 <ItemsList TItem="DayOfWeek" SelectedItems="WorkDays">
-                    @for (int i = 0; i < WeekDays.Count; i++)
+                    @for (var i = 0; i < WeekDays.Count; i++)
                     {
                         var idx = i;
                         <ListItem Item="WeekDays[idx]" Style="@(idx == WeekDays.Count - 1 ? "border-bottom: 0;" : "")">
@@ -45,16 +46,16 @@
                 <div class="max-w-xl m-auto">
                     @if (YearLevels.Count == 0)
                     {
-                        <LoadingSpinner />
+                        <LoadingSpinner/>
                     }
                     else
                     {
-                        <ItemsGrid Items="YearLevels" SelectedItems="SelectedYearLevels" />
+                        <ItemsGrid Items="YearLevels" SelectedItems="SelectedYearLevels"/>
                     }
                 </div>
             </div>
         </div>
-        <br />
+        <br/>
 
         // Subjects and year levels selection
         <div class="w-full pb-4 border-b border-darkGreenBorder">
@@ -64,11 +65,11 @@
                     <div class="max-w-xl m-auto">
                         @if (YearLevels.Count == 0)
                         {
-                            <LoadingSpinner />
+                            <LoadingSpinner/>
                         }
                         else
                         {
-                            <ItemsGrid Items="Subjects" SelectedItems="SelectedSubjects" />
+                            <ItemsGrid Items="Subjects" SelectedItems="SelectedSubjects"/>
                         }
                     </div>
                 </div>
@@ -77,13 +78,13 @@
     }
     else if (CurrentStep == AccountSetupStep.CreatingDayStructure)
     {
-        <DayStructureCreator Parent="this" />
+        <DayStructureCreator Parent="this"/>
     }
     else if (CurrentStep == AccountSetupStep.CreatingWeekStructure)
     {
         <div class="w-full flex-col items-center mb-2 p-2 pb-4">
             <h2 class="text-2xl">Click on a block to choose the subject and number of periods the lesson will go for</h2>
-            <LessonTemplateCreator Parent=this />
+            <LessonTemplateCreator Parent=this/>
         </div>
     }
 
@@ -114,4 +115,3 @@
         }
     </div>
 </div>
-

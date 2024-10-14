@@ -1,23 +1,22 @@
 using Microsoft.AspNetCore.Components;
 using TeachPlanner.BlazorClient.Models.WeekPlanner;
 using TeachPlanner.BlazorClient.Pages.Account;
-using TeachPlanner.Shared.Domain.PlannerTemplates;
+using TeachPlanner.Shared.Enums;
 
 namespace TeachPlanner.BlazorClient.Pages;
 
 public partial class LessonTemplateCreator
 {
-    [Parameter] public AccountSetup Parent { get; set; } = default!;
-
     private const string NIT = "NIT";
+    public readonly string[] _daysOfTheWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
     public string? _errorMessage = null;
     public string _gridRows = string.Empty;
-    public readonly string[] _daysOfTheWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-    public int? NumberOfPeriods;
     public List<int> LessonSpans = [1, 2];
+    public int? NumberOfPeriods;
     public int SelectedDay;
     public int SelectedPeriod;
-    public LessonTemplateModel? SelectedLesson { get; set; }
+    [Parameter] public AccountSetup Parent { get; set; } = default!;
+    public LessonTemplate? SelectedLesson { get; set; }
 
     protected override void OnInitialized()
     {
@@ -29,10 +28,10 @@ public partial class LessonTemplateCreator
     {
         var rows = "0.5fr "; // week and day header row
 
-        for (int i = 0; i < Parent.CombinedPeriodTemplates.Count; i++)
+        for (var i = 0; i < Parent.CombinedPeriodTemplates.Count; i++)
         {
             var entry = Parent.CombinedPeriodTemplates[i];
-            if (entry.Type == PeriodType.Lesson)
+            if (entry.PeriodType == PeriodType.Lesson)
             {
                 rows += "minmax(100px, max-content)";
             }
@@ -49,7 +48,7 @@ public partial class LessonTemplateCreator
 
     private void GenerateLessonPlans()
     {
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             // don't generate lesson plans for non-working days
             if (Parent.WeekStructure.DayTemplates[i] == null)
@@ -64,14 +63,14 @@ public partial class LessonTemplateCreator
                 continue;
             }
 
-            for (int j = 0; j < Parent.WeekStructure.Periods.Count; j++)
+            for (var j = 0; j < Parent.WeekStructure.Periods.Count; j++)
             {
-                if (Parent.WeekStructure.Periods[j].Type != PeriodType.Lesson)
+                if (Parent.WeekStructure.Periods[j].PeriodType != PeriodType.Lesson)
                 {
                     continue;
                 }
 
-                var lessonPlan = new LessonTemplateModel
+                var lessonPlan = new LessonTemplate
                 {
                     DayOfWeek = (DayOfWeek)(i + 1),
                     Type = PeriodType.Lesson,
@@ -85,12 +84,12 @@ public partial class LessonTemplateCreator
         }
     }
 
-    private LessonTemplateModel GetLessonPlan(int col, int startPeriod)
+    private LessonTemplate GetLessonPlan(int col, int startPeriod)
     {
         return Parent.WeekStructure.DayTemplates[col]!.Lessons.Where(lp => lp.StartPeriod == startPeriod).First();
     }
 
-    private bool IsSelected(LessonTemplateModel lesson)
+    private bool IsSelected(LessonTemplate lesson)
     {
         if (SelectedLesson is null)
         {
@@ -100,7 +99,7 @@ public partial class LessonTemplateCreator
         return lesson.DayOfWeek == SelectedLesson.DayOfWeek && lesson.StartPeriod == SelectedLesson.StartPeriod;
     }
 
-    private void SelectLesson(LessonTemplateModel lessonPlan, int day, int period)
+    private void SelectLesson(LessonTemplate lessonPlan, int day, int period)
     {
         SelectedDay = day;
         SelectedPeriod = CalculatePeriodNumber(period);
@@ -116,7 +115,8 @@ public partial class LessonTemplateCreator
 
     private int CalculatePeriodNumber(int period)
     {
-        var breakIndexes = Parent.WeekStructure.Periods.FindAll(p => p.Type == PeriodType.Break).Select(p => Parent.WeekStructure.Periods.IndexOf(p));
+        var breakIndexes = Parent.WeekStructure.Periods.FindAll(p => p.PeriodType == PeriodType.Break)
+            .Select(p => Parent.WeekStructure.Periods.IndexOf(p));
         var periodAdjustmentCount = 0;
         foreach (var idx in breakIndexes)
         {
@@ -154,4 +154,3 @@ public partial class LessonTemplateCreator
         SelectedLesson!.NumberOfPeriods = (int)numberOfLessons!;
     }
 }
-

@@ -1,7 +1,10 @@
 @inject NavigationManager NavManager
 
 @code {
-    protected override void OnInitialized() {
+
+    protected override void OnInitialized()
+    {
         NavManager.NavigateTo("/authentication/login");
     }
+
 }

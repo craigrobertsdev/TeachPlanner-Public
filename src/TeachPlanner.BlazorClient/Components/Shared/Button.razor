@@ -1,40 +1,36 @@
 @using TeachPlanner.BlazorClient.Common.Enums
-
 <button type="@Type" class="@style @ClassList px-4 py-1 rounded-md text-lg @(loading || Disabled ? "!bg-baseDisabled hover:!bg-baseDisabled" : "")"
-        @onclick=@HandleClick
+        @onclick="@HandleClick"
         disabled="@(Disabled || loading)">
-    @if (loading) {
+    @if (loading)
+    {
         <div class="text-gray-400 h-[30px] w-[30px]">
-            <img src="images/loading_spinner.svg" class="h-full w-full object-contain" />
+            <img src="images/loading_spinner.svg" class="h-full w-full object-contain"/>
         </div>
     }
-    else {
+    else
+    {
         @ChildContent
     }
 </button>
 
 @code {
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    [Parameter]
-    public EventCallback<MouseEventArgs> OnClick { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnClick { get; set; }
 
-    [Parameter]
-    public ButtonTypes Variant { get; set; }
+    [Parameter] public ButtonTypes Variant { get; set; }
 
-    [Parameter]
-    public bool Disabled { get; set; }
+    [Parameter] public bool Disabled { get; set; }
 
-    [Parameter]
-    public string Type { get; set; } = string.Empty;
+    [Parameter] public string Type { get; set; } = string.Empty;
 
-    [Parameter]
-    public string ClassList { get; set; } = string.Empty;
+    [Parameter] public string ClassList { get; set; } = string.Empty;
 
     private bool loading = false;
 
-    private string style => Variant switch {
+    private string style => Variant switch
+    {
         ButtonTypes.Submit => "bg-sage text-white hover:bg-sageHover",
         ButtonTypes.Cancel => "bg-ceramic text-white hover:bg-ceramicHover",
         ButtonTypes.Add => "bg-peach text-white hover:bg-peachHover ",
@@ -44,9 +40,11 @@
         _ => "bg-sage text-white hover:bg-sageHover"
     };
 
-    private async Task HandleClick() {
+    private async Task HandleClick()
+    {
         loading = true;
         await OnClick.InvokeAsync();
         loading = false;
     }
+
 }

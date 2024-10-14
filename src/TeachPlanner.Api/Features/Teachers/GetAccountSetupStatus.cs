@@ -1,13 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using TeachPlanner.Shared.Database;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Api.Database;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.Teachers;
 
 public static class GetAccountSetupStatus
 {
-    public static async Task<IResult> Delegate([FromRoute] Guid teacherId, ApplicationDbContext context, CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint([FromRoute] Guid teacherId, ApplicationDbContext context,
+        CancellationToken cancellationToken)
     {
         var teacher = await context.Teachers
             .Where(t => t.Id == new TeacherId(teacherId))

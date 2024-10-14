@@ -1,11 +1,12 @@
 using Microsoft.AspNetCore.Identity;
-using TeachPlanner.Shared.Domain.Users;
+using TeachPlanner.Api.Domain.Users;
 
 namespace TeachPlanner.Api.Features.Authentication;
 
 public static class Revoke
 {
-    public static async Task<IResult> Delegate(HttpContext httpContext, UserManager<ApplicationUser> userManager, CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint(HttpContext httpContext, UserManager<ApplicationUser> userManager,
+        CancellationToken cancellationToken)
     {
         var username = httpContext.User.Identity?.Name;
         if (username is null)

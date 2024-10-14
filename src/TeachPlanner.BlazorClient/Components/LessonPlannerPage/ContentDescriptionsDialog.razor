@@ -1,13 +1,11 @@
 @using TeachPlanner.BlazorClient.Common.Enums
 @using TeachPlanner.BlazorClient.Components.Shared
-@using TeachPlanner.BlazorClient.Models.Resources
 @using TeachPlanner.BlazorClient.Models.Subjects
 @using TeachPlanner.BlazorClient.State
 @using TeachPlanner.Shared.Contracts.Curriculum
-@using TeachPlanner.Shared.Contracts.Resources
-@using TeachPlanner.Shared.Domain.Common.Enums
-@using TeachPlanner.Shared.Domain.Curriculum
-
+@using TeachPlanner.Shared.Enums
+@using TeachPlanner.Shared.StronglyTypedIds
+@using Button = MudBlazor.Button
 @inject IHttpClientFactory Http
 @inject ApplicationState AppState
 
@@ -22,29 +20,30 @@
             else if (Loading)
             {
                 <div class="flex h-full items-center justify-center">
-                    <MudProgressCircular Indeterminate=true />
+                    <MudProgressCircular Indeterminate=true/>
                 </div>
             }
             else
             {
-                <select class="text-center rounded border border-darkGreenBorder font-bold p-1 bg-inherit" @bind="SelectedYearLevel">
+                <select class="text-center rounded border border-darkGreenBorder font-bold p-1 bg-inherit"
+                        @bind="SelectedYearLevel">
                     @foreach (var yearLevel in YearLevels)
                     {
                         <option value="@yearLevel">@yearLevel.ToDisplayString()</option>
                     }
                 </select>
-                <MudCheckBox @bind-Value="FilterPlannedContentDescriptions" Label="Remove planned content descriptions" Class="mx-auto" />
-                <ItemsList TItem="ContentDescriptionModel"
-                           Items="ContentDescriptions[SelectedYearLevel]"
-                           SelectedItems="SelectedContentDescriptions[SelectedYearLevel]"
-                           Rounded=false>
-                    @for (int i = 0; i < ContentDescriptions[SelectedYearLevel].Count; i++)
+                <MudCheckBox @bind-Value="FilterPlannedContentDescriptions" Label="Remove planned content descriptions"
+                             Class="mx-auto"/>
+                <ItemsList TItem="ContentDescription" Items="ContentDescriptions[SelectedYearLevel]"
+                           SelectedItems="SelectedContentDescriptions[SelectedYearLevel]" Rounded=false>
+                    @for (var i = 0; i < ContentDescriptions[SelectedYearLevel].Count; i++)
                     {
                         var idx = i;
                         if (FilterPlannedContentDescriptions && ContentDescriptions[SelectedYearLevel][idx].AlreadyPlannedFor)
                         {
                             continue;
                         }
+
                         var contentDescription = ContentDescriptions[SelectedYearLevel][idx];
                         <ListItem Item="ContentDescriptions[SelectedYearLevel][idx]">
                             <p class="text-left px-1">
@@ -67,28 +66,26 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    public MudDialogInstance MudDialog { get; set; } = null!;
-
-    [Parameter]
-    public Dictionary<YearLevelValue, List<ContentDescriptionModel>> ContentDescriptions { get; set; } = [];
-
-    [Parameter]
-    public Dictionary<YearLevelValue, List<ContentDescriptionModel>> SelectedContentDescriptions { get; set; } = [];
-
-    [Parameter]
-    public List<YearLevelValue> YearLevels { get; set; } = [];
-
-    [Parameter]
-    public SubjectId SubjectId { get; set; } = default!;
+    [CascadingParameter] public MudDialogInstance MudDialog { get; set; } = null!;
+    [Parameter] public Dictionary<YearLevelValue, List<ContentDescription>> ContentDescriptions { get; set; } = [];
+    [Parameter] public Dictionary<YearLevelValue, List<ContentDescription>> SelectedContentDescriptions { get; set; } = [];
+    [Parameter] public List<YearLevelValue> YearLevels { get; set; } = [];
+    [Parameter] public SubjectId SubjectId { get; set; } = default!;
 
     private bool Loading { get; set; }
     private bool Error { get; set; }
     private YearLevelValue SelectedYearLevel { get; set; }
     private bool FilterPlannedContentDescriptions { get; set; }
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok((true, ContentDescriptions, SelectedContentDescriptions)));
-    private void Cancel() => MudDialog.Close(DialogResult.Ok((false, ContentDescriptions, SelectedContentDescriptions)));
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok((true, ContentDescriptions, SelectedContentDescriptions)));
+    }
+
+    private void Cancel()
+    {
+        MudDialog.Close(DialogResult.Ok((false, ContentDescriptions, SelectedContentDescriptions)));
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -97,7 +94,8 @@
             try
             {
                 Loading = true;
-                var contentDescriptions = await Http.CreateClient("ServerApi").GetFromJsonAsync<Dictionary<YearLevelValue, List<ContentDescriptionDto>>>(
+                var contentDescriptions = await Http.CreateClient("ServerApi").GetFromJsonAsync<Dictionary<YearLevelValue,
+                    List<ContentDescriptionDto>>>(
                     $"/api/{AppState.Teacher.Id.Value}/curriculum/content-descriptions/?subjectId={SubjectId.Value}&{YearLevels.ToQueryString()}");
 
                 if (contentDescriptions is null)
@@ -105,12 +103,12 @@
                     Error = true;
                     return;
                 }
+
                 ContentDescriptions = contentDescriptions.ConvertFromDtos();
-                SelectedYearLevel = contentDescriptions.Keys.First();
 
                 foreach (var key in ContentDescriptions.Keys)
                 {
-                    SelectedContentDescriptions.Add(key, new List<ContentDescriptionModel>());
+                    SelectedContentDescriptions.Add(key, []);
                 }
             }
             catch (Exception e)
@@ -123,6 +121,8 @@
             }
         }
 
+        SelectedYearLevel = ContentDescriptions.Keys.First();
+
         if (SelectedContentDescriptions.Count == 0)
         {
             InitialiseSelectedContentDescriptions();
@@ -133,7 +133,8 @@
     {
         foreach (var key in ContentDescriptions.Keys)
         {
-            SelectedContentDescriptions.Add(key, new List<ContentDescriptionModel>());
+            SelectedContentDescriptions.Add(key, []);
         }
     }
+
 }

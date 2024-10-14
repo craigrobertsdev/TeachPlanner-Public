@@ -2,8 +2,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using Microsoft.IdentityModel.Tokens;
-using TeachPlanner.Shared.Common.Interfaces.Authentication;
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Api.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Authentication;
 using TeachPlanner.Shared.Models.Authentication;
 
 namespace TeachPlanner.Api.Services.Authentication;
@@ -26,8 +26,8 @@ public class JwtTokenGenerator : IJwtTokenGenerator
 
         var claims = new[]
         {
-            new Claim(ClaimTypes.Name, email),
-            new Claim(JwtRegisteredClaimNames.Sub, teacher.UserId.ToString()),
+            new Claim(ClaimTypes.Name, email), 
+            new Claim(JwtRegisteredClaimNames.Sub, teacher.UserId),
             new Claim(JwtRegisteredClaimNames.GivenName, teacher.FirstName),
             new Claim(JwtRegisteredClaimNames.FamilyName, teacher.LastName),
             new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),

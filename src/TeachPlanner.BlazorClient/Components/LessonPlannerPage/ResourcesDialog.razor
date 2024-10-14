@@ -3,30 +3,34 @@
 @using TeachPlanner.BlazorClient.Models.Resources
 @using TeachPlanner.BlazorClient.State
 @using TeachPlanner.Shared.Contracts.Resources
-@using TeachPlanner.Shared.Domain.Common.Enums
-@using TeachPlanner.Shared.Domain.Curriculum
-
+@using TeachPlanner.Shared.Enums
+@using TeachPlanner.Shared.StronglyTypedIds
+@using Button = MudBlazor.Button
 @inject IHttpClientFactory Http
 @inject ApplicationState AppState
 
 <MudDialog>
     <DialogContent>
         <div class="w-96 h-96">
-            @if (Loading) {
+            @if (Loading)
+            {
                 <div class="flex h-full items-center justify-center">
-                    <MudProgressCircular Indeterminate=true />
+                    <MudProgressCircular Indeterminate=true/>
                 </div>
             }
-            else if (Error) {
+            else if (Error)
+            {
                 <p>An error occurred while loading resources. Please refresh the page and try again.</p>
             }
             else if (Resources.Count == 0)
             {
                 <p>No resources exist for this subject</p>
             }
-            else {
-                <ItemsList TItem="ResourceModel" Items="Resources" SelectedItems="SelectedResources" Rounded=false>
-                    @for (int i = 0; i < Resources.Count; i++) {
+            else
+            {
+                <ItemsList TItem="Resource" Items="Resources" SelectedItems="SelectedResources" Rounded=false>
+                    @for (var i = 0; i < Resources.Count; i++)
+                    {
                         var idx = i;
                         var resource = Resources[idx];
                         var yearLevels = resource.YearLevels.ConvertAll(yl => yl.ToDisplayString());
@@ -37,7 +41,8 @@
                             <p class="text-sm flex justify-between">
                                 <span>@(resource.IsAssessment ? "Assessment" : "Resource")</span>
                                 <span>
-                                    @for (int i = 0; i < yearLevels.Count; i++) {
+                                    @for (var i = 0; i < yearLevels.Count; i++)
+                                    {
                                         var idx = i;
                                         <span>@(yearLevels[idx])@(idx == yearLevels.Count - 1 ? "" : ", ") </span>
                                     }
@@ -56,36 +61,47 @@
 </MudDialog>
 
 @code {
-    [CascadingParameter]
-    public MudDialogInstance MudDialog { get; set; } = null!;
+    [CascadingParameter] public MudDialogInstance MudDialog { get; set; } = null!;
 
-    [Parameter]
-    public List<ResourceModel> Resources { get; set; } = [];
+    [Parameter] public List<Resource> Resources { get; set; } = [];
 
-    [Parameter]
-    public List<ResourceModel> SelectedResources { get; set; } = [];
+    [Parameter] public List<Resource> SelectedResources { get; set; } = [];
 
-    [Parameter]
-    public SubjectId SubjectId { get; set; } = null!;
+    [Parameter] public SubjectId SubjectId { get; set; } = null!;
 
     private bool Loading { get; set; }
-    private bool Error { get; set; }
+    private bool Error { get; }
 
-    private void Submit() => MudDialog.Close(DialogResult.Ok((true, Resources, SelectedResources)));
-    private void Cancel() => MudDialog.Close(DialogResult.Ok((false, Resources, SelectedResources)));
+    private void Submit()
+    {
+        MudDialog.Close(DialogResult.Ok((true, Resources, SelectedResources)));
+    }
 
-    protected override async Task OnInitializedAsync() {
-        if (Resources.Count == 0) {
-            try {
+    private void Cancel()
+    {
+        MudDialog.Close(DialogResult.Ok((false, Resources, SelectedResources)));
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Resources.Count == 0)
+        {
+            try
+            {
                 Loading = true;
                 var resources = await Http.CreateClient("ServerApi").GetFromJsonAsync<List<ResourceDto>>(
                     $"/api/{AppState.Teacher.Id.Value}/resources/{SubjectId.Value}");
                 Resources = resources!.ConvertFromDtos();
-            } catch (Exception e) {
+            }
+            catch (Exception e)
+            {
                 Console.WriteLine(e);
-            } finally {
+            }
+            finally
+            {
                 Loading = false;
             }
         }
     }
+
 }

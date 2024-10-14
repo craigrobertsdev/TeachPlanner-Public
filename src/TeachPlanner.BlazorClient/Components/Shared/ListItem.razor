@@ -1,27 +1,22 @@
 @typeparam TItem
 
 <p style="@Style" class="text-center text-lg border-b border-darkGreenBorder hover:cursor-pointer hover:bg-baseHover @(IsSelected() ? "bg-baseFocus" : "")"
-   @onclick=HandleItemClick>
+   @onclick="HandleItemClick">
     <p class="p-1 ">
         @ChildContent
     </p>
 </p>
 
 @code {
-    [Parameter]
-    public TItem Item { get; set; } = default!;
+    [Parameter] public TItem Item { get; set; } = default!;
 
-    [Parameter]
-    public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    [Parameter]
-    public string Style { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = string.Empty;
 
-    [Parameter]
-    public bool Selectable { get; set; } = true;
+    [Parameter] public bool Selectable { get; set; } = true;
 
-    [CascadingParameter]
-    public ItemsList<TItem> Parent { get; set; } = default!;
+    [CascadingParameter] public ItemsList<TItem> Parent { get; set; } = default!;
 
     private bool Selected { get; set; }
 
@@ -50,4 +45,5 @@
 
         Selected = IsSelected();
     }
+
 }

@@ -1,19 +1,19 @@
 using FluentValidation;
 using Mapster;
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Authentication;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Contracts.Authentication;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.Users;
 using Microsoft.AspNetCore.Identity;
+using TeachPlanner.Api.Domain.Teachers;
+using TeachPlanner.Api.Domain.Users;
+using TeachPlanner.Api.Interfaces.Authentication;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Contracts.Authentication;
+using TeachPlanner.Shared.Exceptions;
 
 namespace TeachPlanner.Api.Features.Authentication;
 
 public static class Register
 {
-    public static async Task<IResult> Delegate(RegisterModel request, ISender sender,
+    public static async Task<IResult> Endpoint(RegisterModel request, ISender sender,
         CancellationToken cancellationToken)
     {
         var command = request.Adapt<Command>();
@@ -38,14 +38,14 @@ public static class Register
 
     internal sealed class Handler : IRequestHandler<Command, AuthenticationResponse>
     {
+        private readonly IConfiguration _configuration;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
         private readonly ITeacherRepository _teacherRepository;
         private readonly IUnitOfWork _unitOfWork;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _configuration;
 
         public Handler(IJwtTokenGenerator jwtTokenGenerator, ITeacherRepository teacherRepository,
-                       IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IConfiguration configuration)
+            IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager, IConfiguration configuration)
         {
             _jwtTokenGenerator = jwtTokenGenerator;
             _teacherRepository = teacherRepository;
@@ -56,7 +56,10 @@ public static class Register
 
         public async Task<AuthenticationResponse> Handle(Command request, CancellationToken cancellationToken)
         {
-            if (request.Password != request.ConfirmedPassword) throw new PasswordsDoNotMatchException();
+            if (request.Password != request.ConfirmedPassword)
+            {
+                throw new PasswordsDoNotMatchException();
+            }
 
             var user = await _userManager.FindByEmailAsync(request.Email);
             if (user != null)
@@ -64,7 +67,8 @@ public static class Register
                 throw new DuplicateEmailException();
             }
 
-            var refreshExpiryMinutes = _configuration["JWTSettings:RefreshTokenExpiryMinutes"] ?? throw new InvalidOperationException("Secret not configured");
+            var refreshExpiryMinutes = _configuration["JWTSettings:RefreshTokenExpiryMinutes"] ??
+                                       throw new InvalidOperationException("Secret not configured");
 
             user = new ApplicationUser
             {
@@ -88,7 +92,7 @@ public static class Register
 
             var tokenResponse = _jwtTokenGenerator.GenerateToken(teacher, user.Email);
 
-            return new AuthenticationResponse(tokenResponse.Token, tokenResponse.Expiration, user.RefreshToken, false);
+            return new AuthenticationResponse(request.FirstName, request.LastName, tokenResponse.Token, tokenResponse.Expiration, user.RefreshToken, false);
         }
     }
 }

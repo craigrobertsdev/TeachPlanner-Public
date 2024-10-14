@@ -1,10 +1,10 @@
 @page "/lesson-planner"
-@using TeachPlanner.Api.Extensions
 @using TeachPlanner.BlazorClient.Common.Enums
 @using TeachPlanner.BlazorClient.Components.LessonPlannerPage
 @using TeachPlanner.BlazorClient.Components.Shared
 @using TeachPlanner.BlazorClient.State
-@using TeachPlanner.Shared.Common.Extensions
+@using TeachPlanner.Shared.Extensions
+@using Button = MudBlazor.Button
 
 @inject IHttpClientFactory Http
 @inject ApplicationState AppState
@@ -49,7 +49,7 @@
         </div>
         <p class="text-center font-semibold">Date: @Date.GetCalendarDate()</p>
     </div>
-    <div class="row-start-1 col-start-2 flex items-center justify-end gap-3">
+    <div class="row-start-1 col-start-2 flex items-center justify-end gap-3 pr-2">
         <Button Variant="ButtonTypes.Submit" OnClick="HandleSave">
             Save
         </Button>
@@ -59,16 +59,25 @@
     </div>
 
     @* Planning notes form *@
-    <div class="flex flex-col flex-grow pb-2">
+    <div class="flex flex-col flex-grow pl-2 pb-2">
         <form class="flex flex-col h-full flex-grow items-center">
-            <div id="rte-container" class="w-full h-full flex flex-col flex-grow border border-darkGreenBorder overflow-auto">
-                <RichTextEditor Parent="@this" PlanningNotes="@PlanningNotesHtml" />
+            <div id="rte-container" class="w-full h-full flex-grow text-black">
+                @if (LessonPlan is null)
+                {
+                    <div class="flex flex-grow items-center justify-center">
+                        <MudProgressCircular Indeterminate="true"/>
+                    </div>
+                }
+                else
+                {
+                    <RichTextEditor @ref=RichTextEditor Text="@LessonPlan.PlanningNotesHtml"/>
+                }
             </div>
         </form>
     </div>
 
     @* Resources and content descriptions container *@
-    <div id="resource-cd-container" class="flex flex-col gap-1 flex-grow items-center h-full pb-2">
+    <div id="resource-cd-container" class="flex flex-col gap-1 flex-grow items-center h-full pr-2 pb-2">
         @* Resources *@
         <div class="flex flex-col items-center w-full flex-grow h-1/2">
             <div class="flex w-full items-center justify-between px-2 py-[3px]">
@@ -78,7 +87,7 @@
                 </Button>
             </div>
             <div class="max-h-1/2 flex-grow w-full border border-darkGreenBorder p-2 flex flex-col overflow-hidden">
-                <ResourceAssessmentTabView Resources="CurrentSubject?.SelectedResources" />
+                <ResourceAssessmentTabView Resources="CurrentSubject?.SelectedResources"/>
             </div>
         </div>
         @* Content descriptions *@
@@ -95,7 +104,6 @@
                     <div class="flex justify-center align-center h-full p-2">
                         No content descriptions selected for this lesson
                     </div>
-
                 }
                 else
                 {
@@ -104,10 +112,10 @@
                         {
                             <li class="hover:bg-sageHover group [&:not(:first-child)]:border-t border-darkGreenBorder">
                                 <div class="invisible group-hover:visible">
-                                    <CancelButton Class="pr-2" OnClick="@(cd.OnClick)" />
+                                    <CancelButton Class="pr-2" OnClick="@(cd.OnClick)"/>
                                 </div>
                                 <p class="underline flex justify-between px-2 pt-2">
-                                    @for (int i = 0; i < cd.CurriculumCodes.Count; i++)
+                                    @for (var i = 0; i < cd.CurriculumCodes.Count; i++)
                                     {
                                         if (cd.CurriculumCodes.Count == 1 || i == cd.CurriculumCodes.Count - 1)
                                         {

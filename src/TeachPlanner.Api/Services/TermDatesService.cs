@@ -1,28 +1,23 @@
 using Microsoft.EntityFrameworkCore;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Services;
-using TeachPlanner.Shared.Database;
-using TeachPlanner.Shared.Domain.PlannerTemplates;
+using TeachPlanner.Api.Database;
+using TeachPlanner.Api.Interfaces.Services;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.ValueObjects;
 
 namespace TeachPlanner.Api.Services;
 
 public class TermDatesService : ITermDatesService
 {
-    private readonly Dictionary<int, IEnumerable<TermDate>> _termDatesByYear = [];
     private readonly ApplicationDbContext _dbContext;
-    private readonly IServiceProvider _serviceProvider;
+    private readonly Dictionary<int, IEnumerable<TermDate>> _termDatesByYear;
 
     // year, term number, number of weeks
     private readonly Dictionary<int, Dictionary<int, int>> _termWeekNumbers = [];
 
-    public IReadOnlyDictionary<int, IEnumerable<TermDate>> TermDatesByYear => _termDatesByYear.AsReadOnly();
-    public IReadOnlyDictionary<int, Dictionary<int, int>> TermWeekNumbers => _termWeekNumbers;
-
 
     public TermDatesService(IServiceProvider serviceProvider)
     {
-        _serviceProvider = serviceProvider;
-        var scope = _serviceProvider.CreateScope();
+        var scope = serviceProvider.CreateScope();
         _dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         _termDatesByYear = Task.Run(LoadTermDates).Result;
         // To allow API to start without term dates on first run
@@ -34,19 +29,9 @@ public class TermDatesService : ITermDatesService
         _termWeekNumbers = InitialiseTermWeekNumbers();
     }
 
-    private async Task<Dictionary<int, IEnumerable<TermDate>>> LoadTermDates()
-    {
-        var termDates = await _dbContext.TermDates.ToListAsync();
+    public IReadOnlyDictionary<int, IEnumerable<TermDate>> TermDatesByYear => _termDatesByYear.AsReadOnly();
+    public IReadOnlyDictionary<int, Dictionary<int, int>> TermWeekNumbers => _termWeekNumbers;
 
-        if (termDates.Count == 0)
-        {
-            return [];
-        }
-
-        return new Dictionary<int, IEnumerable<TermDate>>() {
-            { termDates[0].StartDate.Year, termDates }
-        };
-    }
     public void SetTermDates(int year, List<TermDate> termDates)
     {
         _termDatesByYear[year] = termDates;
@@ -54,14 +39,14 @@ public class TermDatesService : ITermDatesService
 
     public DateOnly GetWeekStart(int year, int termNumber, int weekNumber)
     {
-        if (termNumber < 1 || termNumber > 4)
+        if (termNumber is < 1 or > 4)
         {
-            throw new ArgumentException("Term number must be between 1 and 4");
+            throw new ArgumentOutOfRangeException(nameof(termNumber), "Term number must be between 1 and 4");
         }
 
         if (weekNumber < 0)
         {
-            throw new ArgumentException("Week number must be greater than 0");
+            ArgumentOutOfRangeException.ThrowIfNegative(weekNumber, nameof(weekNumber));
         }
 
         var term = _termDatesByYear[year].First(x => x.TermNumber == termNumber);
@@ -87,7 +72,7 @@ public class TermDatesService : ITermDatesService
 
     public int GetWeekNumber(int year, int termNumber, DateOnly weekStart)
     {
-        if (termNumber < 1 || termNumber > 4)
+        if (termNumber is < 1 or > 4)
         {
             throw new ArgumentException("Term number must be between 1 and 4");
         }
@@ -101,6 +86,30 @@ public class TermDatesService : ITermDatesService
         }
 
         return weekNumber;
+    }
+
+    private async Task<Dictionary<int, IEnumerable<TermDate>>> LoadTermDates()
+    {
+        var termDates = await _dbContext.TermDates.ToListAsync();
+
+        if (termDates.Count == 0)
+        {
+            return [];
+        }
+
+        var termDatesByYear = new Dictionary<int, IEnumerable<TermDate>>();
+        foreach (var termDate in termDates)
+        {
+            if (termDatesByYear.ContainsKey(termDate.StartDate.Year))
+            {
+                continue;
+            }
+
+            termDatesByYear.Add(termDate.StartDate.Year,
+                termDates.Where(td => td.StartDate.Year == termDate.StartDate.Year));
+        }
+
+        return termDatesByYear;
     }
 
     private Dictionary<int, Dictionary<int, int>> InitialiseTermWeekNumbers()

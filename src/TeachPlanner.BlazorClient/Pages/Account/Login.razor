@@ -1,26 +1,24 @@
 @page "/authentication/login"
-@using TeachPlanner.BlazorClient.Authentication
-@using TeachPlanner.BlazorClient.Common.Enums
-@using TeachPlanner.BlazorClient.Components
-@using TeachPlanner.BlazorClient.Services
-@using TeachPlanner.BlazorClient.State
-@using TeachPlanner.BlazorClient.Validators
-@using TeachPlanner.Shared.Contracts.Authentication
 @inject IAuthenticationService AuthenticationService
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager NavManager
 @inject ApplicationState AppState
+@using TeachPlanner.BlazorClient.Authentication
+@using TeachPlanner.BlazorClient.Services
+@using TeachPlanner.BlazorClient.State
+@using TeachPlanner.BlazorClient.Validators
+@using TeachPlanner.Shared.Contracts.Authentication
 @implements IDisposable
 
 <fieldset>
-    <EditForm EditContext=@editContext OnValidSubmit="HandleSubmit">
+    <EditForm EditContext="@editContext" OnValidSubmit="HandleSubmit">
         <div class="flex flex-col w-full max-w-md m-auto">
             <h2 class="text-xl text-center mb-4">Login</h2>
             <label class="text-lg pb-1" htmlFor="email">Email</label>
             <InputText class="w-full text-lg border border-gray-300 hover:border-gray-500 hover:shadow-inner rounded-md p-1 mb-2 focus:border-gray-300"
-                       @bind-Value="Model!.Email" id="email" name="email" required autocomplete="username" />
+                       @bind-Value="Model!.Email" id="email" name="email" required autocomplete="username"/>
             <div class="text-ceramic font-semibold">
-                <ValidationMessage For="() => Model.Email" />
+                <ValidationMessage For="() => Model.Email"/>
             </div>
             <label class="text-lg pb-1" htmlFor="password">Password</label>
             <InputText type="password" class="w-full text-lg border border-gray-300 hover:border-gray-500 hover:shadow-inner rounded-md p-1 mb-2
@@ -29,7 +27,8 @@
                 Login
             </button>
 
-            @if (_errorMessage is not null) {
+            @if (_errorMessage is not null)
+            {
                 <p class="text-ceramic text-lg">@_errorMessage</p>
             }
         </div>
@@ -42,60 +41,72 @@
     private EditContext? editContext;
     private ValidationMessageStore? messageStore;
 
-    [CascadingParameter]
-    public Task<AuthenticationState> AuthState { get; set; } = null!;
+    [CascadingParameter] public Task<AuthenticationState> AuthState { get; set; } = null!;
 
-    [SupplyParameterFromForm]
-    public LoginModel? Model { get; set; }
+    [SupplyParameterFromForm] public LoginModel? Model { get; set; }
 
-    protected override void OnInitialized() {
-        Model = new();
-        editContext = new(Model);
+    protected override void OnInitialized()
+    {
+        Model = new LoginModel();
+        editContext = new EditContext(Model);
         editContext.OnValidationRequested += HandleValidationRequested;
-        messageStore = new(editContext);
+        messageStore = new ValidationMessageStore(editContext);
         AppState.OnChange += StateHasChanged;
     }
 
-    protected override async Task OnInitializedAsync() {
+    protected override async Task OnInitializedAsync()
+    {
         var user = (await AuthState).User;
-        if (user.Identity is not null && user.Identity.IsAuthenticated) {
+        if (user.Identity is not null && user.Identity.IsAuthenticated)
+        {
             NavManager.NavigateTo("/week-planner");
         }
     }
 
-    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args) {
+    private void HandleValidationRequested(object? sender, ValidationRequestedEventArgs args)
+    {
         messageStore?.Clear();
 
-        if (!AuthenticationValidators.IsValidEmail(Model!.Email)) {
+        if (!AuthenticationValidators.IsValidEmail(Model!.Email))
+        {
             messageStore?.Add(() => Model!.Email, "Please enter a valid email address");
         }
     }
 
-    private async Task HandleSubmit() {
+    private async Task HandleSubmit()
+    {
         disabled = true;
-        try {
+        try
+        {
             await AuthenticationService.Login(Model!);
             await (AuthProvider as CustomAuthenticationStateProvider)!.NotifyAuthStateAsync();
-            if (AppState.Teacher.AccountSetupComplete) {
+            if (AppState.Teacher.AccountSetupComplete)
+            {
                 NavManager.NavigateTo("/week-planner", true);
             }
-            else {
+            else
+            {
                 NavManager.NavigateTo("/account-setup", true);
             }
         }
-        catch (Exception e) {
+        catch (Exception e)
+        {
             _errorMessage = e.Message;
             disabled = false;
         }
     }
 
-    public void Dispose() {
-        if (editContext is not null) {
+    public void Dispose()
+    {
+        if (editContext is not null)
+        {
             editContext.OnValidationRequested -= HandleValidationRequested;
         }
 
-        if (AppState is not null) {
+        if (AppState is not null)
+        {
             AppState.OnChange -= StateHasChanged;
         }
     }
+
 }

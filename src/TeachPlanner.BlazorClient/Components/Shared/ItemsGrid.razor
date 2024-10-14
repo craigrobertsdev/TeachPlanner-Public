@@ -30,7 +30,10 @@
         }
     }
 
-    private bool IsSelected(TItem item) => SelectedItems.Contains(item);
+    private bool IsSelected(TItem item)
+    {
+        return SelectedItems.Contains(item);
+    }
 
     private string GetStyle(int idx)
     {
@@ -47,4 +50,5 @@
 
         return style;
     }
+
 }

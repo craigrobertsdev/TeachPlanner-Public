@@ -1,24 +1,25 @@
 using System.Net.Http.Json;
 using TeachPlanner.BlazorClient.Models.WeekPlanner;
-using TeachPlanner.Shared.Common.Exceptions;
 using TeachPlanner.Shared.Contracts.WeekPlanners;
-using TeachPlanner.Shared.Domain.PlannerTemplates;
+using TeachPlanner.Shared.Enums;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.ValueObjects;
 
 namespace TeachPlanner.BlazorClient.Pages;
 
 public partial class WeekPlanner
 {
-    private string? errorMessage = null;
-    private string gridRows = string.Empty;
-
-    public int WeekNumber { get; set; }
-    public List<TemplatePeriodModel> Periods { get; set; } = null!;
-    public List<DayPlanModel> DayPlans { get; set; } = null!;
-    public DayPlanTemplateModel? DayPlanTemplate { get; set; }
+    private string? _errorMessage;
+    private string _gridRows = string.Empty;
+    private int Year { get; set; }
+    private int WeekNumber { get; set; }
+    private List<TemplatePeriod> Periods { get; set; } = [];
+    private List<DayPlan> DayPlans { get; set; } = [];
+    private List<DayTemplate> DayTemplates { get; set; } = [];
     public int CurrentTerm { get; set; } = 1;
     public DateTime? SelectedDate { get; set; }
-    public List<TermDate> TermDates { get; set; } = new();
-    public DateOnly WeekStart { get; set; }
+    private List<TermDate> TermDates { get; set; } = [];
+    private DateOnly WeekStart { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
@@ -28,29 +29,54 @@ public partial class WeekPlanner
         }
 
         var client = HttpFactory.CreateClient("ServerApi");
+        Year = AppState.Teacher.LastSelectedYear;
+        WeekStart = AppState.Teacher.LastSelectedWeekStart;
 
         try
         {
-            var termDates = await client.GetFromJsonAsync<IEnumerable<TermDate>>($"api/services/term-dates?year=2024");
-            if (termDates is null) throw new TermDatesNotFoundException();
-            TermDates = termDates.ToList();
-
-            var weekPlanner = await client.GetFromJsonAsync<WeekPlannerDto>($"api/{AppState.Teacher.Id.Value}/week-planner?term=1&week=1&year=2024");
-            if (weekPlanner is null)
+            var termDates =
+                await client.GetFromJsonAsync<IEnumerable<TermDate>>($"api/{AppState.Teacher.Id.Value}/curriculum/term-dates?year={Year}");
+            if (termDates is null)
             {
-                throw new Exception("Failed to retrieve week planner");
+                throw new TermDatesNotFoundException();
+            }
+
+            TermDates = termDates.ToList();
+            CalculateTermAndWeekNumber(TermDates, WeekStart);
+            var response =
+                await client.GetAsync(
+                    $"api/{AppState.Teacher.Id.Value}/week-planner?term={CurrentTerm}&week={WeekNumber}&year={Year}");
+
+            WeekPlannerDto weekPlanner;
+            if (!response.IsSuccessStatusCode)
+            {
+                var createWeekPlannerResponse = await client.PostAsJsonAsync(
+                        $"api/{AppState.Teacher.Id.Value}/week-planner",
+                        new CreateWeekPlannerRequest(WeekNumber, CurrentTerm, Year));
+                
+                if (!createWeekPlannerResponse.IsSuccessStatusCode)
+                {
+                    throw new Exception("Failed to create week planner");
+                }
+                
+                weekPlanner = (await createWeekPlannerResponse.Content.ReadFromJsonAsync<WeekPlannerDto>())!;
+            }
+            else
+            {
+                weekPlanner = (await response.Content.ReadFromJsonAsync<WeekPlannerDto>())!;
             }
 
             WeekStart = weekPlanner.WeekStart;
             WeekNumber = weekPlanner.WeekNumber;
-            DayPlans = weekPlanner.DayPlans.ConvertFromDtos(weekPlanner.WeekStart).SetDates(weekPlanner.WeekStart).ToList();
-            Periods = weekPlanner.DayPlanPattern.Pattern.ConvertFromDtos();
-            DayPlanTemplate = weekPlanner.DayPlanPattern.ConvertFromDto();
+            DayPlans = weekPlanner.DayPlans.ConvertFromDtos(weekPlanner.WeekStart).SetDates(weekPlanner.WeekStart)
+                .ToList();
+            Periods = weekPlanner.WeekStructure.Periods;
+            DayTemplates = weekPlanner.WeekStructure.DayTemplates.FromDtos();
             SetGridDimensions();
         }
         catch (Exception e)
         {
-            errorMessage = e.Message;
+            _errorMessage = e.Message;
         }
     }
 
@@ -58,10 +84,9 @@ public partial class WeekPlanner
     {
         var rows = "0.5fr "; // week and day header row
 
-        for (int i = 0; i < Periods.Count; i++)
+        foreach (var entry in Periods)
         {
-            var entry = Periods[i];
-            if (entry.Type == PeriodType.Lesson)
+            if (entry.PeriodType == PeriodType.Lesson)
             {
                 rows += "minmax(100px, max-content)";
             }
@@ -72,17 +97,36 @@ public partial class WeekPlanner
 
             rows += " ";
 
-            gridRows = rows;
+            _gridRows = rows;
         }
     }
 
-    private LessonPlanModel? GetLessonPlan(int i, int j)
+    private LessonPlan? GetLessonPlan(int i, int j)
     {
         if (DayPlans[i].LessonPlans.Count == 0)
         {
             return null;
         }
 
-        return DayPlans[i].LessonPlans.Where(lp => lp.StartPeriod == j + 1).FirstOrDefault();
+        return DayPlans[i].LessonPlans.FirstOrDefault(lp => lp.StartPeriod == j + 1);
+    }
+    
+    private void CalculateTermAndWeekNumber(IEnumerable<TermDate> termDates, DateOnly weekStart)
+    {
+        var termDate = termDates.FirstOrDefault(td => td.StartDate <= weekStart && td.EndDate >= weekStart);
+        if (termDate is null)
+        {
+            throw new TermDatesNotFoundException();
+        }
+
+        CurrentTerm = termDate.TermNumber;
+        for (int i = 0; i < termDate.GetNumberOfWeeks(); i++)
+        {
+            if (termDate.StartDate.AddDays(i * 7) == weekStart)
+            {
+                WeekNumber = i + 1;
+                break;
+            }
+        }
     }
 }

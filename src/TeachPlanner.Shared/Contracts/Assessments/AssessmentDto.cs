@@ -1,5 +1,5 @@
-using TeachPlanner.Shared.Domain.Assessments;
-using TeachPlanner.Shared.Domain.Common.Enums;
+using TeachPlanner.Shared.Enums;
+using TeachPlanner.Shared.ValueObjects;
 
 namespace TeachPlanner.Shared.Contracts.Assessments;
 

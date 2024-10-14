@@ -1,6 +1,6 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
-using TeachPlanner.Shared.Common.Exceptions;
+using TeachPlanner.Shared.Exceptions;
 
 namespace TeachPlanner.Api.Middleware;
 

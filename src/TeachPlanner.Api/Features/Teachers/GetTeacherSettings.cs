@@ -1,69 +1,42 @@
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Contracts.Teachers.GetTeacherSettings;
-using TeachPlanner.Shared.Domain.PlannerTemplates;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.TermPlanners;
-using TeachPlanner.Shared.Domain.YearDataRecords;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Contracts.Teachers;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.Teachers;
 
 public static class GetTeacherSettings
 {
-    public static async Task<IResult> Delegate(Guid teacherId, int calendarYear, ISender sender,
+    public static async Task<IResult> Endpoint(Guid teacherId, ISender sender,
         CancellationToken cancellationToken)
     {
-        var query = new Query(new TeacherId(teacherId), calendarYear);
+        var query = new Query(new TeacherId(teacherId));
         var result = await sender.Send(query, cancellationToken);
 
         return Results.Ok(result);
     }
 
-    public record Query(TeacherId TeacherId, int CalendarYear) : IRequest<GetTeacherSettingsResponse>;
+    public record Query(TeacherId TeacherId) : IRequest<SettingsResponse>;
 
-    public sealed class Handler : IRequestHandler<Query, GetTeacherSettingsResponse>
+    public sealed class Handler : IRequestHandler<Query, SettingsResponse>
     {
         private readonly ITeacherRepository _teacherRepository;
-        private readonly ITermPlannerRepository _termPlannerRepository;
-        private readonly IYearDataRepository _yearDataRepository;
 
-        public Handler(ITeacherRepository teacherRepository, IYearDataRepository yearDataRepository,
-            ITermPlannerRepository termPlannerRepository)
+        public Handler(ITeacherRepository teacherRepository)
         {
             _teacherRepository = teacherRepository;
-            _yearDataRepository = yearDataRepository;
-            _termPlannerRepository = termPlannerRepository;
         }
 
-        public async Task<GetTeacherSettingsResponse> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<SettingsResponse> Handle(Query request, CancellationToken cancellationToken)
         {
             var teacher = await _teacherRepository.GetById(request.TeacherId, cancellationToken);
-            if (teacher == null) throw new TeacherNotFoundException();
-
-            var yearData =
-                await _yearDataRepository.GetByTeacherIdAndYear(request.TeacherId, request.CalendarYear,
-                    cancellationToken);
-
-            if (yearData == null)
+            if (teacher == null)
             {
-                var weekStructure = WeekStructure.Create(new(), request.TeacherId);
-                yearData = YearData.Create(request.TeacherId, request.CalendarYear, weekStructure);
+                throw new TeacherNotFoundException();
             }
 
-            var termPlanner =
-                await _termPlannerRepository.GetByYearDataIdAndYear(yearData.Id, request.CalendarYear,
-                    cancellationToken);
-
-            if (termPlanner is null)
-                termPlanner = TermPlanner.Create(yearData.Id, request.CalendarYear, yearData.YearLevelsTaught.ToList());
-
-            return new GetTeacherSettingsResponse(
-                yearData.Id,
-                yearData.Subjects,
-                yearData.Students,
-                yearData.YearLevelsTaught,
-                termPlanner);
+            return new SettingsResponse(teacher.LastSelectedYear, teacher.LastSelectedWeekStart);
         }
     }
 }

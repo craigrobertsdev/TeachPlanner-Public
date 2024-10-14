@@ -1,8 +1,4 @@
 using Blazored.LocalStorage;
-using Blazorise;
-using Blazorise.Icons.FontAwesome;
-using Blazorise.RichTextEdit;
-using Blazorise.Tailwind;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -27,11 +23,6 @@ builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 builder.Services.AddSingleton<ApplicationState>();
 builder.Services.AddBlazoredLocalStorageAsSingleton();
 builder.Services.AddMudServices();
-builder.Services
-    .AddBlazorise()
-    .AddTailwindProviders()
-    .AddFontAwesomeIcons()
-    .AddBlazoriseRichTextEdit();
 
 var host = builder.Build();
 

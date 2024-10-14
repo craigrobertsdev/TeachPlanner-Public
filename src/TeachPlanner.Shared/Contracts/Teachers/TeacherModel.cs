@@ -1,4 +1,4 @@
-using TeachPlanner.Shared.Domain.Teachers;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Shared.Contracts.Teachers;
 

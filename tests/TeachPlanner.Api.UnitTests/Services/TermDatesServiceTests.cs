@@ -3,31 +3,32 @@ using FluentAssertions;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using TeachPlanner.Api.Database;
+using TeachPlanner.Api.Interfaces.Services;
 using TeachPlanner.Api.Services;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Services;
-using TeachPlanner.Shared.Database;
-using TeachPlanner.Shared.Domain.PlannerTemplates;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.ValueObjects;
 
-namespace TeachPlanner.Api.UnitTests.Services;
+namespace TeachPlanner.Api.Tests.Services;
 
 public class TermDatesServiceTests
 {
-    private readonly ITermDatesService _termDatesService;
-    private readonly List<TermDate> _termDates;
     private readonly IServiceProvider _serviceProvider;
+    private readonly List<TermDate> _termDates;
+    private readonly ITermDatesService _termDatesService;
 
     public TermDatesServiceTests()
     {
-        _termDates = new List<TermDate> {
+        _termDates =
+        [
             new(1, new DateOnly(2023, 1, 30), new DateOnly(2023, 4, 14)),
             new(2, new DateOnly(2023, 5, 1), new DateOnly(2023, 7, 7)),
             new(3, new DateOnly(2023, 7, 24), new DateOnly(2023, 9, 29)),
             new(4, new DateOnly(2023, 10, 16), new DateOnly(2023, 12, 15))
-        };
+        ];
 
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase(databaseName: "TeachPlanner")
+            .UseInMemoryDatabase("TermDatesServiceTests")
             .Options;
 
         var publisher = A.Fake<IPublisher>();
@@ -132,13 +133,9 @@ public class TermDatesServiceTests
     public void TermWeeks_WhenCalled_ReturnsCorrectNumberOfTermWeeks()
     {
         // Arrange
-        var expected = new Dictionary<int, Dictionary<int, int>>() {
-            { 2023, new Dictionary<int, int>() {
-                { 1, 11 },
-                { 2, 10 },
-                { 3, 10 },
-                { 4, 9 }
-            } }
+        var expected = new Dictionary<int, Dictionary<int, int>>
+        {
+            { 2023, new Dictionary<int, int> { { 1, 11 }, { 2, 10 }, { 3, 10 }, { 4, 9 } } }
         };
 
         // Act

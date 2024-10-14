@@ -1,4 +1,4 @@
-using TeachPlanner.Shared.Domain.PlannerTemplates;
+using TeachPlanner.Shared.ValueObjects;
 
 namespace TeachPlanner.Shared.Contracts.Services;
 

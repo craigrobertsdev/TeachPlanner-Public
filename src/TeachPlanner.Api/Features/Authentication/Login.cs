@@ -1,19 +1,19 @@
 using FluentValidation;
 using Mapster;
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Authentication;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Contracts.Authentication;
 using Microsoft.AspNetCore.Identity;
-using TeachPlanner.Shared.Domain.Users;
+using TeachPlanner.Api.Domain.Users;
+using TeachPlanner.Api.Interfaces.Authentication;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Contracts.Authentication;
+using TeachPlanner.Shared.Exceptions;
 
 namespace TeachPlanner.Api.Features.Authentication;
 
 public static class Login
 {
-    public static async Task<IResult> Delegate(LoginModel request, ISender sender,
-           CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint(LoginModel request, ISender sender,
+        CancellationToken cancellationToken)
     {
         var command = request.Adapt<Command>();
         var result = await sender.Send(command, cancellationToken);
@@ -38,15 +38,15 @@ public static class Login
 
     internal sealed class Handler : IRequestHandler<Command, AuthenticationResponse>
     {
+        private readonly IConfiguration _configuration;
         private readonly IJwtTokenGenerator _jwtTokenGenerator;
         private readonly ITeacherRepository _teacherRepository;
         private readonly UserManager<ApplicationUser> _userManager;
-        private readonly IConfiguration _configuration;
 
         public Handler(IJwtTokenGenerator jwtTokenGenerator,
-                       ITeacherRepository teacherRepository,
-                       UserManager<ApplicationUser> userManager,
-                       IConfiguration configuration)
+            ITeacherRepository teacherRepository,
+            UserManager<ApplicationUser> userManager,
+            IConfiguration configuration)
         {
             _jwtTokenGenerator = jwtTokenGenerator;
             _teacherRepository = teacherRepository;
@@ -64,16 +64,21 @@ public static class Login
             }
 
             var teacher = await _teacherRepository.GetByUserId(user.Id, cancellationToken);
-            if (teacher == null) throw new TeacherNotFoundException();
+            if (teacher == null)
+            {
+                throw new TeacherNotFoundException();
+            }
 
             var tokenResponse = _jwtTokenGenerator.GenerateToken(teacher, user.Email!);
 
-            var refreshExpiryMinutes = _configuration["JWTSettings:RefreshTokenExpiryMinutes"] ?? throw new InvalidOperationException("Secret not configured");
+            var refreshExpiryMinutes = _configuration["JWTSettings:RefreshTokenExpiryMinutes"] ??
+                                       throw new InvalidOperationException("Secret not configured");
             user.RefreshToken = AuthenticationHelpers.GenerateRefreshToken();
             user.RefreshTokenExpiry = DateTime.UtcNow.AddMinutes(int.Parse(refreshExpiryMinutes));
             await _userManager.UpdateAsync(user);
 
-            return new AuthenticationResponse(tokenResponse.Token, tokenResponse.Expiration, user.RefreshToken, teacher.AccountSetupComplete);
+            return new </ UserProvider > AuthenticationResponse(teacher.FirstName, teacher.LastName, tokenResponse.Token, tokenResponse.Expiration, user.RefreshToken,
+                teacher.AccountSetupComplete);
         }
     }
 }

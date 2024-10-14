@@ -1,16 +1,16 @@
 using MediatR;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
+using TeachPlanner.Api.Domain.Teachers;
+using TeachPlanner.Api.Interfaces.Persistence;
 using TeachPlanner.Shared.Contracts.Resources;
-using TeachPlanner.Shared.Domain.Common.Enums;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.Curriculum;
+using TeachPlanner.Shared.Enums;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.Teachers;
 
 public static class CreateResource
 {
-    public static async Task<IResult> Delegate(ISender sender, Guid teacherId, CreateResourceRequest request,
+    public static async Task<IResult> Endpoint(ISender sender, Guid teacherId, CreateResourceRequest request,
         CancellationToken cancellationToken)
     {
         var command = new Command(new TeacherId(teacherId), request.Name, new SubjectId(request.SubjectId),
@@ -21,7 +21,12 @@ public static class CreateResource
         return Results.Ok(result);
     }
 
-    public record Command(TeacherId TeacherId, string Name, SubjectId SubjectId, List<YearLevelValue> YearLevels, List<string> AssociatedStrands,
+    public record Command(
+        TeacherId TeacherId,
+        string Name,
+        SubjectId SubjectId,
+        List<YearLevelValue> YearLevels,
+        List<string> AssociatedStrands,
         bool IsAssessment) : IRequest<string>;
 
     public sealed class Handler : IRequestHandler<Command, string>
@@ -42,7 +47,10 @@ public static class CreateResource
 
             var teacher = await _teacherRepository.GetById(request.TeacherId, cancellationToken);
 
-            if (teacher is null) throw new TeacherNotFoundException();
+            if (teacher is null)
+            {
+                throw new TeacherNotFoundException();
+            }
 
             var resource = Resource.Create(
                 request.TeacherId,

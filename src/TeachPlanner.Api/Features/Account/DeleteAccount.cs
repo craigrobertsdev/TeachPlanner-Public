@@ -1,18 +1,27 @@
 using MediatR;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TeachPlanner.Shared.Common.Exceptions;
-using TeachPlanner.Shared.Common.Interfaces.Persistence;
-using TeachPlanner.Shared.Domain.Teachers;
-using TeachPlanner.Shared.Domain.Users;
+using TeachPlanner.Api.Domain.Users;
+using TeachPlanner.Api.Interfaces.Persistence;
+using TeachPlanner.Shared.Exceptions;
+using TeachPlanner.Shared.StronglyTypedIds;
 
 namespace TeachPlanner.Api.Features.Account;
 
 public static class DeleteAccount
 {
-    public static async Task<IResult> Delegate([FromRoute] Guid teacherId, ISender sender, CancellationToken cancellationToken)
+    public static async Task<IResult> Endpoint([FromRoute] Guid teacherId, ISender sender,
+        CancellationToken cancellationToken)
     {
-        await sender.Send(new Command(new TeacherId(teacherId)), cancellationToken);
+        try
+        {
+            await sender.Send(new Command(new TeacherId(teacherId)), cancellationToken);
+        }
+        catch (TeacherNotFoundException)
+        {
+            return Results.NotFound();
+        }
+
         return Results.Ok();
     }
 
@@ -21,10 +30,11 @@ public static class DeleteAccount
     public sealed class Handler : IRequestHandler<Command>
     {
         private readonly ITeacherRepository _teacherRepository;
-        private readonly UserManager<ApplicationUser> _userManager;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public Handler(ITeacherRepository teacherRepository, IUnitOfWork unitOfWork, UserManager<ApplicationUser> userManager)
+        public Handler(ITeacherRepository teacherRepository, IUnitOfWork unitOfWork,
+            UserManager<ApplicationUser> userManager)
         {
             _teacherRepository = teacherRepository;
             _unitOfWork = unitOfWork;
@@ -40,7 +50,7 @@ public static class DeleteAccount
             }
 
             _teacherRepository.Delete(teacher);
-            var user = await _userManager.FindByIdAsync(teacher.UserId.ToString());
+            var user = await _userManager.FindByIdAsync(teacher.UserId);
             await _userManager.DeleteAsync(user!);
             await _unitOfWork.SaveChangesAsync(cancellationToken);
         }

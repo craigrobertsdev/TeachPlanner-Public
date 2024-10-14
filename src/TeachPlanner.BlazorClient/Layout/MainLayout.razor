@@ -1,36 +1,43 @@
 @inherits LayoutComponentBase
 @inject NavigationManager NavManager
 
-<MudThemeProvider Theme="currentTheme" />
-<MudDialogProvider CloseButton="true" CloseOnEscapeKey="true" DisableBackdropClick="true" />
-<MudSnackbarProvider />
+<MudThemeProvider Theme="_currentTheme"/>
+<MudDialogProvider CloseButton="true" CloseOnEscapeKey="true" DisableBackdropClick="true"/>
+<MudSnackbarProvider/>
 
-<MudLayout Style="position:absolute">
+<MudLayout Style="display: flex">
     <MudAppBar id="header" Elevation="0" Color="Color.Primary" Dense="true">
-        <NavMenu />
+        <NavMenu/>
     </MudAppBar>
-    <MudMainContent Style="display: flex; flex-direction: column; height: 100dvh; max-height: 100dvh">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Style="display:flex; flex-direction:column; flex-grow: 1; padding-left: 0.5rem !important; padding-right: 0.5rem !important;">
+    <MudMainContent Style="display: flex; flex-grow: 1; flex-direction: column">
+        <div class="overflow-x-hidden"
+             style="display:flex; flex-direction:column; flex-grow: 1; padding-left: 0 !important; padding-right: 0 !important;">
             @Body
-        </MudContainer>
+        </div>
     </MudMainContent>
 </MudLayout>
 
 @code {
-    private readonly MudTheme currentTheme = new() {
-        Palette = new PaletteLight {
+
+    private readonly MudTheme _currentTheme = new()
+    {
+        Palette = new PaletteLight
+        {
             Primary = "#90AEB2",
             Secondary = "#37514D",
             Info = "#DD8E75",
             Success = "#37514D",
             Warning = "#DD8E75",
             Error = "#B6594C",
-            TextPrimary = "#000000",
+            TextPrimary = "#000000"
         },
-        Typography = new Typography {
-            Default = new Default { 
-                FontFamily = new[] { "Nunito Sans", "sans-serif", "monospace" }
-            }, 
+        Typography = new Typography
+        {
+            Default = new Default
+            {
+                FontFamily = ["Nunito Sans", "sans-serif", "monospace"]
+            }
         }
     };
+
 }

@@ -1,9 +1,6 @@
 @page "/settings"
-@attribute [Authorize]
-@using TeachPlanner.BlazorClient.Common.Enums
-@using TeachPlanner.BlazorClient.Components
-@using TeachPlanner.BlazorClient.Components.Shared
 @using TeachPlanner.BlazorClient.Services
+@attribute [Authorize]
 
 @inject IDialogService DialogService
 @inject IAuthenticationService AuthService
@@ -16,10 +13,11 @@
 </Button>
 
 @code {
+
     private async Task DeleteAccount()
     {
         var result = await DialogService.ShowMessageBox("Are you sure you want to delete your account?", "Delete Account",
-        "Yes", "Cancel");
+            "Yes", "Cancel");
 
         if (result == true)
         {
@@ -27,4 +25,5 @@
             NavManager.NavigateTo("/", true, true);
         }
     }
+
 }

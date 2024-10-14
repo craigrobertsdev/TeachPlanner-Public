@@ -9,33 +9,34 @@
 </CascadingValue>
 
 @code {
-    [Parameter]
-    public List<TItem> Items { get; set; } = [];
+    [Parameter] public List<TItem> Items { get; set; } = [];
 
-    [Parameter]
-    public List<TItem> SelectedItems { get; set; } = [];
+    [Parameter] public List<TItem> SelectedItems { get; set; } = [];
 
-    [Parameter]
-    public RenderFragment ChildContent { get; set; } = null!;
+    [Parameter] public RenderFragment ChildContent { get; set; } = null!;
 
-    [Parameter]
-    public string Class { get; set; } = string.Empty;
+    [Parameter] public string Class { get; set; } = string.Empty;
 
-    [Parameter]
-    public bool Rounded { get; set; } = true;
+    [Parameter] public bool Rounded { get; set; } = true;
 
-    protected override void OnInitialized() {
-        if (ChildContent is null) {
+    protected override void OnInitialized()
+    {
+        if (ChildContent is null)
+        {
             throw new ArgumentNullException(nameof(ChildContent));
         }
     }
 
-    public void HandleItemClick(TItem item) {
-        if (SelectedItems.Contains(item)) {
+    public void HandleItemClick(TItem item)
+    {
+        if (SelectedItems.Contains(item))
+        {
             SelectedItems.Remove(item);
         }
-        else {
+        else
+        {
             SelectedItems.Add(item);
         }
     }
+
 }

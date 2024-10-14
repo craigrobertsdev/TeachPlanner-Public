@@ -1,12 +1,10 @@
-@using TeachPlanner.BlazorClient.Models
-@using TeachPlanner.BlazorClient.Pages.Account
-
 <div class="mt-4 pb-2">
     @* Lesson templates section *@
     <div class="flex justify-center gap-6 pb-6">
         <div>
             <h3 class="text-xl">How many lessons do you have in a day?</h3>
-            <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.None" Class="text-center text-lg font-semibold border border-darkGreenBorder rounded-md bg-main"
+            <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.None"
+                       Class="text-center text-lg font-semibold border border-darkGreenBorder rounded-md bg-main"
                        Value="selectedLessonNumber" ValueChanged="HandleLessonNumberChange">
                 @foreach (var lessonNumber in numberOfLessons)
                 {
@@ -17,12 +15,12 @@
 
         <div>
             <h3 class="text-xl">How many breaks do you have in a day?</h3>
-            <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.None" Class="text-center text-lg font-semibold border border-darkGreenBorder rounded-md bg-main"
+            <MudSelect T="int" Variant="Variant.Outlined" Margin="Margin.None"
+                       Class="text-center text-lg font-semibold border border-darkGreenBorder rounded-md bg-main"
                        Value="selectedBreakNumber" ValueChanged="HandleBreakNumberChange">
                 @foreach (var breakNumber in numberOfBreaks)
                 {
                     <MudSelectItem T="int" value=@breakNumber>@breakNumber</MudSelectItem>
-
                 }
             </MudSelect>
         </div>
@@ -30,16 +28,18 @@
 
     <div class="flex justify-center  pb-6">
         <div class="grid grid-cols-3 gap-6">
-            @for (int i = 0; i < Parent.LessonTemplates.Count; i++)
+            @for (var i = 0; i < Parent.LessonTemplates.Count; i++)
             {
-                int idx = i;
-                <MudCard Class="text-lg pt-2">
+                var idx = i;
+                <MudCard Class="text-lg pt-2 bg-sage">
                     <h5 class="text-lg">Lesson @(idx + 1)</h5>
                     <div class="grid grid-cols-2 gap-y-3 p-3 justify-center">
                         <label class="m-auto underline">Start: </label>
-                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow" @bind-value="Parent.LessonTemplates[idx].StartTime" />
+                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow"
+                               @bind-value="Parent.LessonTemplates[idx].StartTime"/>
                         <label class="m-auto underline">End: </label>
-                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow" @bind-value="Parent.LessonTemplates[idx].EndTime" />
+                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow"
+                               @bind-value="Parent.LessonTemplates[idx].EndTime"/>
                     </div>
                 </MudCard>
             }
@@ -49,22 +49,24 @@
     @* Break templates section *@
     <div class="flex justify-center">
         <div class="grid grid-cols-@(selectedBreakNumber) gap-6">
-            @for (int i = 0; i < Parent.BreakTemplates.Count; i++)
+            @for (var i = 0; i < Parent.BreakTemplates.Count; i++)
             {
-                int idx = i;
-                <MudCard Class="text-lg max-w-80 pt-2">
+                var idx = i;
+                <MudCard Class="text-lg max-w-80 pt-2 bg-sage">
                     <h5 class="text-xl">Break @(idx + 1)</h5>
                     <div class="grid grid-cols-2 gap-y-3 p-3">
                         <label>Name: </label>
-                        <input type="text" placeholder="Lunch" class="px-2 border border-darkGreen rounded-lg hover:shadow" @bind-value="Parent.BreakTemplates[idx].Name" />
+                        <input type="text" placeholder="Lunch" class="px-2 border border-darkGreen rounded-lg hover:shadow"
+                               @bind-value="Parent.BreakTemplates[idx].Name"/>
                         <label class="m-auto underline">Start: </label>
-                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow" @bind-value="Parent.BreakTemplates[idx].StartTime" />
+                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow"
+                               @bind-value="Parent.BreakTemplates[idx].StartTime"/>
                         <label class="m-auto underline">End: </label>
-                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow" @bind-value="Parent.BreakTemplates[idx].EndTime" />
+                        <input type="time" class="px-2 border border-darkGreen rounded-lg hover:shadow"
+                               @bind-value="Parent.BreakTemplates[idx].EndTime"/>
                     </div>
                 </MudCard>
             }
         </div>
     </div>
 </div>
-

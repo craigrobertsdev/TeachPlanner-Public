@@ -1,4 +1,6 @@
-namespace TeachPlanner.BlazorClient.Models;
+using TeachPlanner.Shared.Interfaces.Planner;
+
+namespace TeachPlanner.Shared.Models.Planner;
 
 public class LessonTemplate : IPeriodTemplate
 {
